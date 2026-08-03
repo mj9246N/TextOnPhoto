@@ -13,14 +13,16 @@ class CanvasView @JvmOverloads constructor(
     attrs: AttributeSet? = null
 ) : View(context, attrs) {
 
+    // اینترفیس عناصر قابل رسم
     interface DrawableElement {
         fun draw(canvas: Canvas, scale: Float, offsetX: Float, offsetY: Float)
         fun hitTest(touchX: Float, touchY: Float, scale: Float, offsetX: Float, offsetY: Float): Boolean
-        var x: Float
+        var x: Float   // موقعیت در فضای طراحی
         var y: Float
         var size: Float
     }
 
+    // فقط عنصر متن (اشکال حذف شدند)
     data class TextElement(
         var text: String,
         override var x: Float,
@@ -50,46 +52,20 @@ class CanvasView @JvmOverloads constructor(
         }
     }
 
-    data class ShapeElement(
-        val type: ShapeType,
-        override var x: Float,
-        override var y: Float,
-        override var size: Float
-    ) : DrawableElement {
-        enum class ShapeType { SQUARE, RECTANGLE, LINE, CIRCLE }
-
-        override fun draw(canvas: Canvas, scale: Float, offsetX: Float, offsetY: Float) {
-            val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                style = Paint.Style.STROKE
-                strokeWidth = 4f
-                color = Color.BLACK
-            }
-            val s = size * scale
-            val ox = x * scale + offsetX
-            val oy = y * scale + offsetY
-            when (type) {
-                ShapeType.SQUARE -> canvas.drawRect(ox - s/2, oy - s/2, ox + s/2, oy + s/2, paint)
-                ShapeType.RECTANGLE -> canvas.drawRect(ox - s/2, oy - s/4, ox + s/2, oy + s/4, paint)
-                ShapeType.LINE -> canvas.drawLine(ox - s/2, oy, ox + s/2, oy, paint)
-                ShapeType.CIRCLE -> canvas.drawCircle(ox, oy, s/2, paint)
-            }
-        }
-
-        override fun hitTest(touchX: Float, touchY: Float, scale: Float, offsetX: Float, offsetY: Float): Boolean {
-            val ox = x * scale + offsetX
-            val oy = y * scale + offsetY
-            val tolerance = 20f
-            return touchX in (ox - tolerance)..(ox + tolerance) && touchY in (oy - tolerance)..(oy + tolerance)
-        }
-    }
+    // ابعاد ثابت طراحی (1280x720)
+    var designWidth = 1280f
+    var designHeight = 720f
 
     var elements = mutableListOf<DrawableElement>()
     var onElementSelected: ((Int) -> Unit)? = null
-    var onCanvasTap: ((Float, Float) -> Unit)? = null
+    var onCanvasTap: ((Float, Float) -> Unit)? = null  // مختصات در فضای طراحی
 
-    private var scaleFactor = 1f
-    private var offsetX = 0f
-    private var offsetY = 0f
+    // ماتریس تبدیل برای نمایش در View
+    private var viewScale = 1f
+    private var viewOffsetX = 0f
+    private var viewOffsetY = 0f
+
+    // برای جابجایی و بزرگنمایی با ژست
     private var lastTouchX = 0f
     private var lastTouchY = 0f
     private var dragging = false
@@ -97,8 +73,14 @@ class CanvasView @JvmOverloads constructor(
 
     private val scaleDetector = ScaleGestureDetector(context, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
         override fun onScale(detector: ScaleGestureDetector): Boolean {
-            scaleFactor *= detector.scaleFactor
-            scaleFactor = scaleFactor.coerceIn(0.1f, 5f)
+            viewScale *= detector.scaleFactor
+            viewScale = viewScale.coerceIn(0.2f, 5f)
+            // تنظیم offset برای حفظ مرکز
+            val focusX = detector.focusX
+            val focusY = detector.focusY
+            // محاسبه مجدد offset برای بزرگنمایی حول نقطه فوکوس
+            viewOffsetX = focusX - (focusX - viewOffsetX) * (detector.scaleFactor)
+            viewOffsetY = focusY - (focusY - viewOffsetY) * (detector.scaleFactor)
             invalidate()
             return true
         }
@@ -106,16 +88,42 @@ class CanvasView @JvmOverloads constructor(
 
     private val gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
         override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+            val (designX, designY) = screenToDesign(e.x, e.y)
             val idx = findElementAt(e.x, e.y)
             if (idx != -1) {
                 onElementSelected?.invoke(idx)
             } else {
                 onElementSelected?.invoke(-1)
-                onCanvasTap?.invoke(e.x, e.y)
+                onCanvasTap?.invoke(designX, designY)
             }
             return true
         }
     })
+
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        val w = MeasureSpec.getSize(widthMeasureSpec)
+        val h = MeasureSpec.getSize(heightMeasureSpec)
+        val desiredRatio = designWidth / designHeight
+        val actualRatio = w.toFloat() / h.toFloat()
+
+        val newW: Int
+        val newH: Int
+        if (actualRatio > desiredRatio) {
+            // عرض زیاد است، بر اساس ارتفاع مقیاس می‌دهیم
+            newH = h
+            newW = (h * desiredRatio).toInt()
+        } else {
+            // ارتفاع زیاد است، بر اساس عرض مقیاس می‌دهیم
+            newW = w
+            newH = (w / desiredRatio).toInt()
+        }
+        setMeasuredDimension(newW, newH)
+
+        // محاسبه scale و offset اولیه
+        viewScale = newW.toFloat() / designWidth
+        viewOffsetX = 0f
+        viewOffsetY = 0f
+    }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         scaleDetector.onTouchEvent(event)
@@ -130,16 +138,16 @@ class CanvasView @JvmOverloads constructor(
             }
             MotionEvent.ACTION_MOVE -> {
                 if (dragging && draggedElementIndex != -1) {
-                    val dx = (event.x - lastTouchX) / scaleFactor
-                    val dy = (event.y - lastTouchY) / scaleFactor
+                    val dx = (event.x - lastTouchX) / viewScale
+                    val dy = (event.y - lastTouchY) / viewScale
                     elements[draggedElementIndex].x += dx
                     elements[draggedElementIndex].y += dy
                     lastTouchX = event.x
                     lastTouchY = event.y
                     invalidate()
                 } else if (!scaleDetector.isInProgress) {
-                    offsetX += event.x - lastTouchX
-                    offsetY += event.y - lastTouchY
+                    viewOffsetX += event.x - lastTouchX
+                    viewOffsetY += event.y - lastTouchY
                     lastTouchX = event.x
                     lastTouchY = event.y
                     invalidate()
@@ -153,9 +161,16 @@ class CanvasView @JvmOverloads constructor(
         return true
     }
 
-    private fun findElementAt(touchX: Float, touchY: Float): Int {
+    private fun screenToDesign(screenX: Float, screenY: Float): Pair<Float, Float> {
+        val designX = (screenX - viewOffsetX) / viewScale
+        val designY = (screenY - viewOffsetY) / viewScale
+        return designX to designY
+    }
+
+    private fun findElementAt(screenX: Float, screenY: Float): Int {
         for (i in elements.indices.reversed()) {
-            if (elements[i].hitTest(touchX, touchY, scaleFactor, offsetX, offsetY)) {
+            // استفاده از hitTest با مختصات صفحه
+            if (elements[i].hitTest(screenX, screenY, viewScale, viewOffsetX, viewOffsetY)) {
                 return i
             }
         }
@@ -165,8 +180,15 @@ class CanvasView @JvmOverloads constructor(
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         canvas.drawColor(Color.WHITE)
+
+        // ترجمه و مقیاس برای نمایش
+        canvas.save()
+        canvas.translate(viewOffsetX, viewOffsetY)
+        canvas.scale(viewScale, viewScale)
+
         for (element in elements) {
-            element.draw(canvas, scaleFactor, offsetX, offsetY)
+            element.draw(canvas, 1f, 0f, 0f) // مختصات در فضای طراحی
         }
+        canvas.restore()
     }
 }
