@@ -24,7 +24,8 @@ jobs:
           gradle-version: "8.4"
 
       - name: Build debug APK
-        run: ./gradlew assembleDebug
+        run: gradle assembleDebug
+        # توجه: از gradle استفاده می‌کنیم نه ./gradlew
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
