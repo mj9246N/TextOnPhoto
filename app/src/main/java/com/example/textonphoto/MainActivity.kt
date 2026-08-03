@@ -20,7 +20,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var canvasView: CanvasView
     private var selectedElementIndex = -1
-    private val fontMap = mutableMapOf<String, Typeface>() // name -> typeface
+    private val fontMap = mutableMapOf<String, Typeface>()
     private val fontNames = mutableListOf<String>()
 
     private val openFontLauncher = registerForActivityResult(
@@ -36,18 +36,19 @@ class MainActivity : AppCompatActivity() {
         canvasView = findViewById(R.id.canvasView)
         loadStoredFonts()
 
-        // کلیک روی بوم برای افزودن متن (در صورت عدم انتخاب عنصر)
-        canvasView.setOnClickListener { x, y ->
+        canvasView.onElementSelected = { index ->
+            selectedElementIndex = index
+        }
+
+        canvasView.onCanvasTap = { x, y ->
             if (selectedElementIndex != -1) {
-                // ویرایش متن
-                showTextDialog(canvasView.elements[selectedElementIndex] as? CanvasView.TextElement)
+                val element = canvasView.elements.getOrNull(selectedElementIndex)
+                if (element is CanvasView.TextElement) {
+                    showTextDialog(element)
+                }
             } else {
                 showTextDialog(null, x, y)
             }
-        }
-
-        canvasView.onElementSelected = { index ->
-            selectedElementIndex = index
         }
 
         findViewById<android.widget.Button>(R.id.btnAddText).setOnClickListener {
@@ -107,9 +108,12 @@ class MainActivity : AppCompatActivity() {
                     if (existing != null) {
                         existing.text = text
                     } else {
-                        val font = if (fontNames.isNotEmpty()) fontMap[fontNames.last()] else Typeface.DEFAULT
+                        val font = fontMap[fontNames.lastOrNull()] ?: Typeface.DEFAULT
                         canvasView.elements.add(
-                            CanvasView.TextElement(text, defaultX, defaultY, 60f, font, fontNames.lastOrNull() ?: "پیش‌فرض")
+                            CanvasView.TextElement(
+                                text, defaultX, defaultY, 60f, font,
+                                fontNames.lastOrNull() ?: "پیش‌فرض"
+                            )
                         )
                     }
                     canvasView.invalidate()
