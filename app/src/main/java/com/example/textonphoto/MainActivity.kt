@@ -31,67 +31,77 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        try {
+            setContentView(R.layout.activity_main)
 
-        canvasView = findViewById(R.id.canvasView)
-        loadStoredFonts()
+            canvasView = findViewById(R.id.canvasView)
+            loadStoredFonts()
 
-        canvasView.onElementSelected = { index ->
-            selectedElementIndex = index
-        }
-
-        canvasView.onCanvasTap = { x, y ->
-            if (selectedElementIndex != -1) {
-                val element = canvasView.elements.getOrNull(selectedElementIndex)
-                if (element is CanvasView.TextElement) {
-                    showTextDialog(element)
-                }
-            } else {
-                showTextDialog(null, x, y)
+            canvasView.onElementSelected = { index ->
+                selectedElementIndex = index
             }
-        }
 
-        findViewById<android.widget.Button>(R.id.btnAddText).setOnClickListener {
-            selectedElementIndex = -1
-            canvasView.invalidate()
-            Toast.makeText(this, "روی بوم کلیک کنید تا متن اضافه شود", Toast.LENGTH_SHORT).show()
-        }
+            canvasView.onCanvasTap = { x, y ->
+                if (selectedElementIndex != -1) {
+                    val element = canvasView.elements.getOrNull(selectedElementIndex)
+                    if (element is CanvasView.TextElement) {
+                        showTextDialog(element)
+                    }
+                } else {
+                    showTextDialog(null, x, y)
+                }
+            }
 
-        findViewById<android.widget.Button>(R.id.btnFont).setOnClickListener {
-            openFontLauncher.launch(arrayOf("font/ttf", "application/x-font-ttf", "*/*"))
-        }
-
-        findViewById<android.widget.Button>(R.id.btnShape).setOnClickListener {
-            showShapeDialog()
-        }
-
-        findViewById<android.widget.Button>(R.id.btnDelete).setOnClickListener {
-            if (selectedElementIndex != -1) {
-                canvasView.elements.removeAt(selectedElementIndex)
+            findViewById<android.widget.Button>(R.id.btnAddText).setOnClickListener {
                 selectedElementIndex = -1
                 canvasView.invalidate()
+                Toast.makeText(this, "روی بوم کلیک کنید تا متن اضافه شود", Toast.LENGTH_SHORT).show()
             }
-        }
 
-        findViewById<android.widget.Button>(R.id.btnZoomIn).setOnClickListener {
-            if (selectedElementIndex != -1) {
-                canvasView.elements[selectedElementIndex].size += 5f
-                canvasView.invalidate()
+            findViewById<android.widget.Button>(R.id.btnFont).setOnClickListener {
+                openFontLauncher.launch(arrayOf("font/ttf", "application/x-font-ttf", "*/*"))
             }
-        }
 
-        findViewById<android.widget.Button>(R.id.btnZoomOut).setOnClickListener {
-            if (selectedElementIndex != -1 && canvasView.elements[selectedElementIndex].size > 5f) {
-                canvasView.elements[selectedElementIndex].size -= 5f
-                canvasView.invalidate()
+            findViewById<android.widget.Button>(R.id.btnShape).setOnClickListener {
+                showShapeDialog()
             }
-        }
 
-        findViewById<android.widget.Button>(R.id.btnSave).setOnClickListener {
-            saveBitmapToGallery()
+            findViewById<android.widget.Button>(R.id.btnDelete).setOnClickListener {
+                if (selectedElementIndex != -1) {
+                    canvasView.elements.removeAt(selectedElementIndex)
+                    selectedElementIndex = -1
+                    canvasView.invalidate()
+                }
+            }
+
+            findViewById<android.widget.Button>(R.id.btnZoomIn).setOnClickListener {
+                if (selectedElementIndex != -1) {
+                    canvasView.elements[selectedElementIndex].size += 5f
+                    canvasView.invalidate()
+                }
+            }
+
+            findViewById<android.widget.Button>(R.id.btnZoomOut).setOnClickListener {
+                if (selectedElementIndex != -1 && canvasView.elements[selectedElementIndex].size > 5f) {
+                    canvasView.elements[selectedElementIndex].size -= 5f
+                    canvasView.invalidate()
+                }
+            }
+
+            findViewById<android.widget.Button>(R.id.btnSave).setOnClickListener {
+                saveBitmapToGallery()
+            }
+        } catch (e: Exception) {
+            // اگر خطایی رخ دهد، نمایش داده می‌شود
+            AlertDialog.Builder(this)
+                .setTitle("خطا در اجرا")
+                .setMessage(e.toString())
+                .setPositiveButton("باشه", null)
+                .show()
         }
     }
 
+    // ... بقیه‌ی متدها دقیقاً مثل قبل (بدون تغییر)
     private fun showTextDialog(
         existing: CanvasView.TextElement? = null,
         defaultX: Float = canvasView.width / 2f,
