@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
+import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
@@ -26,7 +27,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnStyle: Button
 
     private val undoStack = mutableListOf<List<CanvasView.CanvasElement>>()
-    private const val MAX_UNDO = 100
+    private val MAX_UNDO = 100
 
     private val openFontLauncher = registerForActivityResult(
         ActivityResultContracts.OpenDocument()
@@ -182,7 +183,7 @@ class MainActivity : AppCompatActivity() {
         if (el.locked) { toast("قفل است"); return }
         pushUndo()
         var newRot = el.rotation + delta
-        newRot = newRot.coerceIn(-180f, 180f) // محدودیت ۱۸۰- تا ۱۸۰
+        newRot = newRot.coerceIn(-180f, 180f)
         el.rotation = newRot
         canvasView.invalidate()
         updateUI()
