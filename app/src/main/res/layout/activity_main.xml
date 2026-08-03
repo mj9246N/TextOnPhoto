@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -9,92 +8,142 @@
         android:id="@+id/canvasView"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/bottomBar"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <HorizontalScrollView
-        android:layout_width="match_parent"
+        android:id="@+id/bottomBar"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:fillViewport="true"
+        android:scrollbars="none"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        android:elevation="8dp"
-        android:fillViewport="true">
+        app:layout_constraintStart_toStartOf="parent">
 
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:background="@drawable/bottom_bar_bg"
+            android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:background="@android:color/white"
-            android:padding="6dp"
-            android:gravity="center_vertical">
+            android:padding="4dp">
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnAddText"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="متن جدید"
-                android:layout_marginEnd="4dp"
-                android:minWidth="0dp"
-                android:paddingHorizontal="8dp"/>
-
-            <Button
-                android:id="@+id/btnFont"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="فونت"
-                android:layout_marginEnd="4dp"
-                android:minWidth="0dp"
-                android:paddingHorizontal="8dp"/>
-
-            <Button
-                android:id="@+id/btnDelete"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="حذف"
-                android:layout_marginEnd="4dp"
-                android:minWidth="0dp"
-                android:paddingHorizontal="8dp"/>
-
-            <Button
-                android:id="@+id/btnZoomOut"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="−"
                 android:layout_marginEnd="2dp"
+                android:insetLeft="0dp"
+                android:insetRight="0dp"
                 android:minWidth="0dp"
-                android:paddingHorizontal="8dp"/>
+                android:paddingHorizontal="6dp"
+                android:text="متن جدید"
+                android:textSize="12sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnFont"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="2dp"
+                android:insetLeft="0dp"
+                android:insetRight="0dp"
+                android:minWidth="0dp"
+                android:paddingHorizontal="6dp"
+                android:text="فونت"
+                android:textSize="12sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnColor"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="2dp"
+                android:insetLeft="0dp"
+                android:insetRight="0dp"
+                android:minWidth="0dp"
+                android:paddingHorizontal="6dp"
+                android:text="رنگ"
+                android:textSize="12sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnLock"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="2dp"
+                android:insetLeft="0dp"
+                android:insetRight="0dp"
+                android:minWidth="0dp"
+                android:paddingHorizontal="6dp"
+                android:text="قفل"
+                android:textSize="12sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnDelete"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="2dp"
+                android:insetLeft="0dp"
+                android:insetRight="0dp"
+                android:minWidth="0dp"
+                android:paddingHorizontal="6dp"
+                android:text="حذف"
+                android:textSize="12sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnZoomOut"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="2dp"
+                android:insetLeft="0dp"
+                android:insetRight="0dp"
+                android:minWidth="0dp"
+                android:paddingHorizontal="6dp"
+                android:text="−"
+                android:textSize="14sp" />
 
             <TextView
                 android:id="@+id/tvSize"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="60"
-                android:textSize="16sp"
-                android:paddingHorizontal="6dp"
                 android:gravity="center"
-                android:minWidth="40dp"/>
+                android:minWidth="36dp"
+                android:text="60"
+                android:textSize="14sp"
+                android:textStyle="bold" />
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnZoomIn"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginEnd="2dp"
+                android:insetLeft="0dp"
+                android:insetRight="0dp"
+                android:minWidth="0dp"
+                android:paddingHorizontal="6dp"
                 android:text="+"
-                android:layout_marginEnd="4dp"
-                android:minWidth="0dp"
-                android:paddingHorizontal="8dp"/>
+                android:textSize="14sp" />
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnSave"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="ذخیره"
-                android:layout_marginEnd="0dp"
+                android:insetLeft="0dp"
+                android:insetRight="0dp"
                 android:minWidth="0dp"
-                android:paddingHorizontal="10dp"/>
-
+                android:paddingHorizontal="8dp"
+                android:text="ذخیره"
+                android:textSize="12sp" />
         </LinearLayout>
     </HorizontalScrollView>
 
