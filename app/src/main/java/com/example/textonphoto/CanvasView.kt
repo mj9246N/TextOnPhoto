@@ -13,11 +13,19 @@ class CanvasView @JvmOverloads constructor(
     attrs: AttributeSet? = null
 ) : View(context, attrs) {
 
+    interface DrawableElement {
+        fun draw(canvas: Canvas, scale: Float, offsetX: Float, offsetY: Float)
+        fun hitTest(touchX: Float, touchY: Float, scale: Float, offsetX: Float, offsetY: Float): Boolean
+        var x: Float
+        var y: Float
+        var size: Float
+    }
+
     data class TextElement(
         var text: String,
-        var x: Float,
-        var y: Float,
-        var size: Float,
+        override var x: Float,
+        override var y: Float,
+        override var size: Float,
         var typeface: Typeface,
         var fontName: String
     ) : DrawableElement {
@@ -44,9 +52,9 @@ class CanvasView @JvmOverloads constructor(
 
     data class ShapeElement(
         val type: ShapeType,
-        var x: Float,
-        var y: Float,
-        var size: Float
+        override var x: Float,
+        override var y: Float,
+        override var size: Float
     ) : DrawableElement {
         enum class ShapeType { SQUARE, RECTANGLE, LINE, CIRCLE }
 
@@ -75,16 +83,9 @@ class CanvasView @JvmOverloads constructor(
         }
     }
 
-    interface DrawableElement {
-        fun draw(canvas: Canvas, scale: Float, offsetX: Float, offsetY: Float)
-        fun hitTest(touchX: Float, touchY: Float, scale: Float, offsetX: Float, offsetY: Float): Boolean
-        var x: Float
-        var y: Float
-        var size: Float
-    }
-
     var elements = mutableListOf<DrawableElement>()
     var onElementSelected: ((Int) -> Unit)? = null
+    var onCanvasTap: ((Float, Float) -> Unit)? = null
 
     private var scaleFactor = 1f
     private var offsetX = 0f
@@ -110,10 +111,7 @@ class CanvasView @JvmOverloads constructor(
                 onElementSelected?.invoke(idx)
             } else {
                 onElementSelected?.invoke(-1)
-                // ارسال کلیک به Activity
-                (context as? MainActivity)?.let { activity ->
-                    activity.onCanvasClick(e.x, e.y)
-                }
+                onCanvasTap?.invoke(e.x, e.y)
             }
             return true
         }
@@ -170,18 +168,5 @@ class CanvasView @JvmOverloads constructor(
         for (element in elements) {
             element.draw(canvas, scaleFactor, offsetX, offsetY)
         }
-    }
-
-    fun setOnClickListener(listener: (Float, Float) -> Unit) {
-        // handled by gesture detector now
-    }
-
-    // متد برای دریافت کلیک از GestureListener
-    fun onCanvasClick(rawX: Float, rawY: Float) {
-        // تبدیل مختصات به فضای بوم
-        val canvasX = (rawX - offsetX) / scaleFactor
-        val canvasY = (rawY - offsetY) / scaleFactor
-        // فراخوانی listener که در MainActivity تنظیم شده
-        // اینجا هیچ کاری نمی‌کنیم، MainActivity مستقیماً از gestureDetector خبر می‌گیرد
     }
 }
