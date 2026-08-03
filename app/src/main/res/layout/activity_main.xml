@@ -27,37 +27,52 @@
 
         <Button
             android:id="@+id/btnAddText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:text="متن جدید"
             android:layout_marginEnd="8dp"/>
 
         <Button
             android:id="@+id/btnFont"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:text="فونت"
             android:layout_marginEnd="8dp"/>
 
         <Button
             android:id="@+id/btnShape"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:text="شکل"
             android:layout_marginEnd="8dp"/>
 
         <Button
             android:id="@+id/btnDelete"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:text="حذف"
             android:layout_marginEnd="8dp"/>
 
         <Button
             android:id="@+id/btnZoomIn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:text="+"
             android:layout_marginEnd="4dp"/>
 
         <Button
             android:id="@+id/btnZoomOut"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:text="-"
             android:layout_marginEnd="8dp"/>
 
         <Button
             android:id="@+id/btnSave"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:text="ذخیره"/>
+
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
