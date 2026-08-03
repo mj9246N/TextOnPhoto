@@ -7,72 +7,95 @@
 
     <com.example.textonphoto.CanvasView
         android:id="@+id/canvasView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <LinearLayout
-        android:layout_width="wrap_content"
+    <HorizontalScrollView
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:background="@android:color/white"
-        android:padding="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        android:elevation="4dp">
+        android:elevation="8dp"
+        android:fillViewport="true">
 
-        <Button
-            android:id="@+id/btnAddText"
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="متن جدید"
-            android:layout_marginEnd="8dp"/>
+            android:orientation="horizontal"
+            android:background="@android:color/white"
+            android:padding="6dp"
+            android:gravity="center_vertical">
 
-        <Button
-            android:id="@+id/btnFont"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="فونت"
-            android:layout_marginEnd="8dp"/>
+            <Button
+                android:id="@+id/btnAddText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="متن جدید"
+                android:layout_marginEnd="4dp"
+                android:minWidth="0dp"
+                android:paddingHorizontal="8dp"/>
 
-        <Button
-            android:id="@+id/btnShape"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="شکل"
-            android:layout_marginEnd="8dp"/>
+            <Button
+                android:id="@+id/btnFont"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="فونت"
+                android:layout_marginEnd="4dp"
+                android:minWidth="0dp"
+                android:paddingHorizontal="8dp"/>
 
-        <Button
-            android:id="@+id/btnDelete"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="حذف"
-            android:layout_marginEnd="8dp"/>
+            <Button
+                android:id="@+id/btnDelete"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="حذف"
+                android:layout_marginEnd="4dp"
+                android:minWidth="0dp"
+                android:paddingHorizontal="8dp"/>
 
-        <Button
-            android:id="@+id/btnZoomIn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="+"
-            android:layout_marginEnd="4dp"/>
+            <Button
+                android:id="@+id/btnZoomOut"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="−"
+                android:layout_marginEnd="2dp"
+                android:minWidth="0dp"
+                android:paddingHorizontal="8dp"/>
 
-        <Button
-            android:id="@+id/btnZoomOut"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="-"
-            android:layout_marginEnd="8dp"/>
+            <TextView
+                android:id="@+id/tvSize"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="60"
+                android:textSize="16sp"
+                android:paddingHorizontal="6dp"
+                android:gravity="center"
+                android:minWidth="40dp"/>
 
-        <Button
-            android:id="@+id/btnSave"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="ذخیره"/>
+            <Button
+                android:id="@+id/btnZoomIn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="+"
+                android:layout_marginEnd="4dp"
+                android:minWidth="0dp"
+                android:paddingHorizontal="8dp"/>
 
-    </LinearLayout>
+            <Button
+                android:id="@+id/btnSave"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ذخیره"
+                android:layout_marginEnd="0dp"
+                android:minWidth="0dp"
+                android:paddingHorizontal="10dp"/>
+
+        </LinearLayout>
+    </HorizontalScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
