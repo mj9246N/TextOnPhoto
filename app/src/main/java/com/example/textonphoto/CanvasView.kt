@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
 import android.view.MotionEvent
-import android.view.ScaleGestureDetector
 import android.view.View
 
 class CanvasView @JvmOverloads constructor(
@@ -12,189 +11,113 @@ class CanvasView @JvmOverloads constructor(
     attrs: AttributeSet? = null
 ) : View(context, attrs) {
 
-    interface DrawableElement {
-        fun draw(canvas: Canvas, scale: Float, offsetX: Float, offsetY: Float)
-        fun hitTest(touchX: Float, touchY: Float, scale: Float, offsetX: Float, offsetY: Float): Boolean
-        var x: Float
-        var y: Float
-        var size: Float
-    }
-
     data class TextElement(
         var text: String,
-        override var x: Float,
-        override var y: Float,
-        override var size: Float,
+        var x: Float, // موقعیت در فضای طراحی 1280x720
+        var y: Float,
+        var size: Float,
         var typeface: Typeface,
         var fontName: String,
         var color: Int = Color.BLACK,
         var locked: Boolean = false
-    ) : DrawableElement {
-        override fun draw(canvas: Canvas, scale: Float, offsetX: Float, offsetY: Float) {
-            val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                this.textSize = size * scale
-                this.typeface = typeface
-                this.color = color
-            }
-            canvas.drawText(text, x * scale + offsetX, y * scale + offsetY, paint)
-            if (locked) {
-                // نشان دادن قفل (یک مربع کوچک)
-                val lockPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    this.color = Color.RED
-                    this.style = Paint.Style.FILL
-                }
-                val lockSize = 12f * scale
-                canvas.drawRect(
-                    (x * scale + offsetX) - lockSize / 2,
-                    (y * scale + offsetY) - lockSize / 2 - paint.textSize * scale * 0.7f,
-                    (x * scale + offsetX) + lockSize / 2,
-                    (y * scale + offsetY) - lockSize / 2 - paint.textSize * scale * 0.7f + lockSize,
-                    lockPaint
-                )
-            }
-        }
+    )
 
-        override fun hitTest(touchX: Float, touchY: Float, scale: Float, offsetX: Float, offsetY: Float): Boolean {
-            val rect = Rect()
-            val paint = Paint().apply { textSize = size * scale }
-            paint.getTextBounds(text, 0, text.length, rect)
-            val left = x * scale + offsetX
-            val top = y * scale + offsetY - rect.height()
-            val right = left + rect.width()
-            val bottom = top + rect.height()
-            return touchX in left..right && touchY in top..bottom
-        }
-    }
-
-    var designWidth = 1280f
-    var designHeight = 720f
-
-    var elements = mutableListOf<DrawableElement>()
+    var elements = mutableListOf<TextElement>()
     var onElementSelected: ((Int) -> Unit)? = null
-    var onCanvasTap: ((Float, Float) -> Unit)? = null  // مختصات طراحی
 
-    private var viewScale = 1f
-    private var viewOffsetX = 0f
-    private var viewOffsetY = 0f
+    private val designWidth = 1280f
+    private val designHeight = 720f
+    private var scaleX = 1f
+    private var scaleY = 1f
+    private var offsetX = 0f
+    private var offsetY = 0f
 
     // برای جابجایی
+    private var draggingIndex = -1
     private var lastTouchX = 0f
     private var lastTouchY = 0f
-    private var dragging = false
-    private var draggedElementIndex = -1
-
-    // برای تشخیص ضربه
-    private var downTime = 0L
-    private var downX = 0f
-    private var downY = 0f
-    private val tapThreshold = 200 // میلی‌ثانیه
-    private val moveThreshold = 10f // پیکسل
-
-    private val scaleDetector = ScaleGestureDetector(context, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
-        override fun onScale(detector: ScaleGestureDetector): Boolean {
-            viewScale *= detector.scaleFactor
-            viewScale = viewScale.coerceIn(0.2f, 5f)
-            val focusX = detector.focusX
-            val focusY = detector.focusY
-            viewOffsetX = focusX - (focusX - viewOffsetX) * (detector.scaleFactor)
-            viewOffsetY = focusY - (focusY - viewOffsetY) * (detector.scaleFactor)
-            invalidate()
-            return true
-        }
-    })
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val w = MeasureSpec.getSize(widthMeasureSpec)
         val h = MeasureSpec.getSize(heightMeasureSpec)
-        val desiredRatio = designWidth / designHeight
-        val actualRatio = w.toFloat() / h.toFloat()
+        val viewRatio = w.toFloat() / h.toFloat()
+        val designRatio = designWidth / designHeight
 
-        val newW: Int
-        val newH: Int
-        if (actualRatio > desiredRatio) {
-            newH = h
-            newW = (h * desiredRatio).toInt()
+        val actualWidth: Float
+        val actualHeight: Float
+        if (viewRatio > designRatio) {
+            actualHeight = h.toFloat()
+            actualWidth = h.toFloat() * designRatio
         } else {
-            newW = w
-            newH = (w / desiredRatio).toInt()
+            actualWidth = w.toFloat()
+            actualHeight = w.toFloat() / designRatio
         }
-        setMeasuredDimension(newW, newH)
+        setMeasuredDimension(actualWidth.toInt(), actualHeight.toInt())
 
-        viewScale = newW.toFloat() / designWidth
-        viewOffsetX = 0f
-        viewOffsetY = 0f
+        scaleX = actualWidth / designWidth
+        scaleY = actualHeight / designHeight
+        offsetX = 0f
+        offsetY = 0f
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        scaleDetector.onTouchEvent(event)
+        val touchX = event.x
+        val touchY = event.y
 
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
-                lastTouchX = event.x
-                lastTouchY = event.y
-                downTime = System.currentTimeMillis()
-                downX = event.x
-                downY = event.y
-
-                draggedElementIndex = findElementAt(event.x, event.y)
-                // اگر عنصر قفل باشد، نمی‌توان کشید
-                if (draggedElementIndex != -1 && (elements[draggedElementIndex] as? TextElement)?.locked == true) {
-                    draggedElementIndex = -1
-                    dragging = false
+                val idx = findElementAt(touchX, touchY)
+                if (idx != -1) {
+                    // شروع کشیدن (در صورت قفل نبودن)
+                    if (!elements[idx].locked) {
+                        draggingIndex = idx
+                        lastTouchX = touchX
+                        lastTouchY = touchY
+                    } else {
+                        draggingIndex = -1
+                    }
+                    onElementSelected?.invoke(idx)
+                    performClick()
                 } else {
-                    dragging = draggedElementIndex != -1
+                    draggingIndex = -1
+                    onElementSelected?.invoke(-1)
                 }
+                return true
             }
             MotionEvent.ACTION_MOVE -> {
-                if (dragging && draggedElementIndex != -1) {
-                    val dx = (event.x - lastTouchX) / viewScale
-                    val dy = (event.y - lastTouchY) / viewScale
-                    elements[draggedElementIndex].x += dx
-                    elements[draggedElementIndex].y += dy
-                    lastTouchX = event.x
-                    lastTouchY = event.y
+                if (draggingIndex != -1) {
+                    val dx = (touchX - lastTouchX) / scaleX
+                    val dy = (touchY - lastTouchY) / scaleY
+                    elements[draggingIndex].x += dx
+                    elements[draggingIndex].y += dy
+                    lastTouchX = touchX
+                    lastTouchY = touchY
                     invalidate()
-                } else if (!scaleDetector.isInProgress) {
-                    viewOffsetX += event.x - lastTouchX
-                    viewOffsetY += event.y - lastTouchY
-                    lastTouchX = event.x
-                    lastTouchY = event.y
-                    invalidate()
+                    return true
                 }
             }
-            MotionEvent.ACTION_UP -> {
-                val upTime = System.currentTimeMillis()
-                val dx = event.x - downX
-                val dy = event.y - downY
-                if (upTime - downTime < tapThreshold && Math.abs(dx) < moveThreshold && Math.abs(dy) < moveThreshold) {
-                    // ضربهٔ ساده
-                    handleTap(event.x, event.y)
-                }
-                dragging = false
-                draggedElementIndex = -1
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                draggingIndex = -1
+                return true
             }
         }
-        return true
+        return super.onTouchEvent(event)
     }
 
-    private fun handleTap(screenX: Float, screenY: Float) {
-        val idx = findElementAt(screenX, screenY)
-        if (idx != -1) {
-            onElementSelected?.invoke(idx)
-        } else {
-            onElementSelected?.invoke(-1)
-            // تبدیل به مختصات طراحی
-            val designX = (screenX - viewOffsetX) / viewScale
-            val designY = (screenY - viewOffsetY) / viewScale
-            onCanvasTap?.invoke(designX.coerceIn(0f, designWidth), designY.coerceIn(0f, designHeight))
-        }
-    }
-
-    private fun findElementAt(screenX: Float, screenY: Float): Int {
+    private fun findElementAt(touchX: Float, touchY: Float): Int {
         for (i in elements.indices.reversed()) {
-            if (elements[i].hitTest(screenX, screenY, viewScale, viewOffsetX, viewOffsetY)) {
-                return i
+            val e = elements[i]
+            val paint = Paint().apply {
+                typeface = e.typeface
+                textSize = e.size * scaleX
             }
+            val rect = Rect()
+            paint.getTextBounds(e.text, 0, e.text.length, rect)
+            val left = e.x * scaleX + offsetX
+            val top = e.y * scaleY + offsetY - rect.height()
+            val right = left + rect.width()
+            val bottom = top + rect.height()
+            if (touchX in left..right && touchY in top..bottom) return i
         }
         return -1
     }
@@ -203,29 +126,32 @@ class CanvasView @JvmOverloads constructor(
         super.onDraw(canvas)
         canvas.drawColor(Color.WHITE)
 
-        // رسم کادر بوم طراحی
+        // حاشیهٔ بوم
         val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.BLACK
             style = Paint.Style.STROKE
             strokeWidth = 3f
         }
-        canvas.drawRect(0f, 0f, designWidth * viewScale + viewOffsetX, designHeight * viewScale + viewOffsetY, borderPaint)
+        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), borderPaint)
 
-        canvas.save()
-        canvas.translate(viewOffsetX, viewOffsetY)
-        canvas.scale(viewScale, viewScale)
+        for (e in elements) {
+            val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                typeface = e.typeface
+                textSize = e.size * scaleX
+                color = e.color
+            }
+            val x = e.x * scaleX + offsetX
+            val y = e.y * scaleY + offsetY
+            canvas.drawText(e.text, x, y, paint)
 
-        // رسم محدودهٔ طراحی با یک مستطیل محو (اختیاری)
-        val bgPaint = Paint().apply {
-            color = Color.argb(20, 0, 0, 0)
-            style = Paint.Style.STROKE
-            strokeWidth = 2f
+            if (e.locked) {
+                val lockPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    this.color = Color.RED
+                    style = Paint.Style.FILL
+                }
+                val lockSize = 10f
+                canvas.drawRect(x - lockSize, y - paint.textSize - lockSize, x + lockSize, y - paint.textSize, lockPaint)
+            }
         }
-        canvas.drawRect(0f, 0f, designWidth, designHeight, bgPaint)
-
-        for (element in elements) {
-            element.draw(canvas, 1f, 0f, 0f)
-        }
-        canvas.restore()
     }
 }
