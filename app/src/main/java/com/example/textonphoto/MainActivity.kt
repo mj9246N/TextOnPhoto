@@ -6,14 +6,13 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
-import android.view.Gravity
-import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.coroutines.*
 import java.io.File
+import kotlin.math.min
 
 class MainActivity : AppCompatActivity() {
 
@@ -22,11 +21,20 @@ class MainActivity : AppCompatActivity() {
     private val fontMap = mutableMapOf<String, Typeface>()
     private val fontNames = mutableListOf<String>()
     private lateinit var tvSize: TextView
+    private lateinit var tvRotation: TextView
     private lateinit var btnLock: Button
+    private lateinit var btnStyle: Button
+
+    private val undoStack = mutableListOf<List<CanvasView.CanvasElement>>()
+    private const val MAX_UNDO = 100
 
     private val openFontLauncher = registerForActivityResult(
         ActivityResultContracts.OpenDocument()
     ) { uri -> uri?.let { loadFont(it) } }
+
+    private val pickStickerLauncher = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri -> uri?.let { addSticker(it) } }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,104 +42,172 @@ class MainActivity : AppCompatActivity() {
 
         canvasView = findViewById(R.id.canvasView)
         tvSize = findViewById(R.id.tvSize)
+        tvRotation = findViewById(R.id.tvRotation)
         btnLock = findViewById(R.id.btnLock)
+        btnStyle = findViewById(R.id.btnStyle)
 
         loadStoredFonts()
+        pushUndo()
 
         canvasView.onElementSelected = { idx ->
             selectedIndex = idx
             updateUI()
         }
 
-        // متن جدید
-        findViewById<Button>(R.id.btnAddText).setOnClickListener {
-            showAddTextDialog()
+        findViewById<Button>(R.id.btnAddText).setOnClickListener { showAddTextDialog() }
+
+        findViewById<Button>(R.id.btnEdit).setOnClickListener {
+            if (selectedIndex == -1) return@setOnClickListener
+            val el = canvasView.elements[selectedIndex]
+            if (el is CanvasView.TextElement) {
+                if (el.locked) { toast("قفل است"); return@setOnClickListener }
+                showEditTextDialog(el)
+            }
         }
 
-        // حذف
+        findViewById<Button>(R.id.btnCopy).setOnClickListener {
+            if (selectedIndex == -1) return@setOnClickListener
+            pushUndo()
+            val copy = canvasView.elements[selectedIndex].clone()
+            copy.x += 30f; copy.y += 30f
+            canvasView.elements.add(copy)
+            selectedIndex = canvasView.elements.size - 1
+            canvasView.invalidate()
+            updateUI()
+        }
+
         findViewById<Button>(R.id.btnDelete).setOnClickListener {
-            if (selectedIndex == -1) {
-                toast("ابتدا یک متن را انتخاب کنید")
-                return@setOnClickListener
-            }
-            val el = canvasView.elements[selectedIndex]
-            if (el.locked) {
-                toast("متن قفل است")
-                return@setOnClickListener
-            }
+            if (selectedIndex == -1) return@setOnClickListener
+            if (canvasView.elements[selectedIndex].locked) { toast("قفل است"); return@setOnClickListener }
+            pushUndo()
             canvasView.elements.removeAt(selectedIndex)
             selectedIndex = -1
             canvasView.invalidate()
             updateUI()
         }
 
-        // فونت
         findViewById<Button>(R.id.btnFont).setOnClickListener {
-            if (selectedIndex == -1) {
-                toast("متنی انتخاب نشده")
+            if (selectedIndex == -1 || canvasView.elements[selectedIndex] !is CanvasView.TextElement) {
+                toast("فقط برای متن")
                 return@setOnClickListener
             }
             showFontPicker()
         }
 
-        // رنگ
         findViewById<Button>(R.id.btnColor).setOnClickListener {
-            if (selectedIndex == -1) {
-                toast("متنی انتخاب نشده")
-                return@setOnClickListener
-            }
-            if (canvasView.elements[selectedIndex].locked) {
-                toast("متن قفل است")
-                return@setOnClickListener
-            }
-            showColorPicker()
-        }
-
-        // بزرگ‌کردن
-        findViewById<Button>(R.id.btnZoomIn).setOnClickListener {
             if (selectedIndex == -1) return@setOnClickListener
             val el = canvasView.elements[selectedIndex]
-            if (el.locked) { toast("متن قفل است"); return@setOnClickListener }
+            if (el is CanvasView.TextElement) {
+                if (el.locked) { toast("قفل است"); return@setOnClickListener }
+                showColorPicker()
+            }
+        }
+
+        btnStyle.setOnClickListener {
+            if (selectedIndex == -1) return@setOnClickListener
+            val el = canvasView.elements[selectedIndex]
+            if (el is CanvasView.TextElement) {
+                if (el.locked) { toast("قفل است"); return@setOnClickListener }
+                pushUndo()
+                el.underline = !el.underline
+                btnStyle.text = if (el.underline) "زیرخط ✓" else "زیرخط"
+                canvasView.invalidate()
+            }
+        }
+
+        findViewById<Button>(R.id.btnRotateLeft).setOnClickListener { rotateSelected(-5f) }
+        findViewById<Button>(R.id.btnRotateRight).setOnClickListener { rotateSelected(5f) }
+
+        findViewById<Button>(R.id.btnZoomIn).setOnClickListener {
+            if (selectedIndex == -1 || canvasView.elements[selectedIndex] !is CanvasView.TextElement) return@setOnClickListener
+            val el = canvasView.elements[selectedIndex] as CanvasView.TextElement
+            if (el.locked) { toast("قفل است"); return@setOnClickListener }
+            pushUndo()
             el.size += 5f
             canvasView.invalidate()
             tvSize.text = el.size.toInt().toString()
         }
 
-        // کوچک‌کردن
         findViewById<Button>(R.id.btnZoomOut).setOnClickListener {
-            if (selectedIndex == -1) return@setOnClickListener
-            val el = canvasView.elements[selectedIndex]
-            if (el.locked) { toast("متن قفل است"); return@setOnClickListener }
+            if (selectedIndex == -1 || canvasView.elements[selectedIndex] !is CanvasView.TextElement) return@setOnClickListener
+            val el = canvasView.elements[selectedIndex] as CanvasView.TextElement
+            if (el.locked) { toast("قفل است"); return@setOnClickListener }
             if (el.size > 5f) {
+                pushUndo()
                 el.size -= 5f
                 canvasView.invalidate()
                 tvSize.text = el.size.toInt().toString()
             }
         }
 
-        // قفل
         btnLock.setOnClickListener {
             if (selectedIndex == -1) return@setOnClickListener
             val el = canvasView.elements[selectedIndex]
+            pushUndo()
             el.locked = !el.locked
             btnLock.text = if (el.locked) "بازکردن" else "قفل"
             canvasView.invalidate()
         }
 
-        // ذخیره
-        findViewById<Button>(R.id.btnSave).setOnClickListener {
-            saveImage()
+        findViewById<Button>(R.id.btnSticker).setOnClickListener {
+            pickStickerLauncher.launch("image/*")
         }
+
+        findViewById<Button>(R.id.btnUndo).setOnClickListener { performUndo() }
+
+        findViewById<Button>(R.id.btnSave).setOnClickListener { saveImage() }
+    }
+
+    private fun pushUndo() {
+        val snapshot = canvasView.elements.map { it.clone() }
+        undoStack.add(snapshot)
+        if (undoStack.size > MAX_UNDO) undoStack.removeAt(0)
+    }
+
+    private fun performUndo() {
+        if (undoStack.size > 1) {
+            undoStack.removeAt(undoStack.size - 1)
+            val prev = undoStack.last()
+            canvasView.elements.clear()
+            canvasView.elements.addAll(prev)
+            selectedIndex = -1
+            canvasView.invalidate()
+            updateUI()
+        }
+    }
+
+    private fun rotateSelected(delta: Float) {
+        if (selectedIndex == -1) return
+        val el = canvasView.elements[selectedIndex]
+        if (el.locked) { toast("قفل است"); return }
+        pushUndo()
+        var newRot = el.rotation + delta
+        newRot = newRot.coerceIn(-180f, 180f) // محدودیت ۱۸۰- تا ۱۸۰
+        el.rotation = newRot
+        canvasView.invalidate()
+        updateUI()
     }
 
     private fun updateUI() {
         if (selectedIndex != -1) {
             val el = canvasView.elements[selectedIndex]
-            tvSize.text = el.size.toInt().toString()
+            tvRotation.text = "${el.rotation.toInt()}°"
             btnLock.text = if (el.locked) "بازکردن" else "قفل"
+            when (el) {
+                is CanvasView.TextElement -> {
+                    tvSize.text = el.size.toInt().toString()
+                    btnStyle.text = if (el.underline) "زیرخط ✓" else "زیرخط"
+                }
+                is CanvasView.ImageElement -> {
+                    tvSize.text = "عکس"
+                    btnStyle.text = "زیرخط"
+                }
+            }
         } else {
             tvSize.text = "60"
+            tvRotation.text = "0°"
             btnLock.text = "قفل"
+            btnStyle.text = "زیرخط"
         }
     }
 
@@ -141,14 +217,12 @@ class MainActivity : AppCompatActivity() {
             .setTitle("متن جدید")
             .setView(editText)
             .setPositiveButton("افزودن") { _, _ ->
-                val text = editText.text.toString()
-                if (text.isNotBlank()) {
+                val text = editText.text.toString().trim()
+                if (text.isNotEmpty()) {
+                    pushUndo()
                     val defaultFont = fontMap[fontNames.lastOrNull()] ?: Typeface.DEFAULT
                     val element = CanvasView.TextElement(
-                        text = text,
-                        x = 640f,
-                        y = 360f,
-                        size = 60f,
+                        text = text, x = 640f, y = 360f, size = 60f,
                         typeface = defaultFont,
                         fontName = fontNames.lastOrNull() ?: "پیش‌فرض"
                     )
@@ -156,6 +230,24 @@ class MainActivity : AppCompatActivity() {
                     selectedIndex = canvasView.elements.size - 1
                     canvasView.invalidate()
                     updateUI()
+                }
+            }
+            .setNegativeButton("انصراف", null)
+            .show()
+    }
+
+    private fun showEditTextDialog(textEl: CanvasView.TextElement) {
+        val editText = EditText(this)
+        editText.setText(textEl.text)
+        AlertDialog.Builder(this)
+            .setTitle("ویرایش متن")
+            .setView(editText)
+            .setPositiveButton("ذخیره") { _, _ ->
+                val newText = editText.text.toString().trim()
+                if (newText.isNotEmpty()) {
+                    pushUndo()
+                    textEl.text = newText
+                    canvasView.invalidate()
                 }
             }
             .setNegativeButton("انصراف", null)
@@ -174,10 +266,12 @@ class MainActivity : AppCompatActivity() {
                     val name = items[which]
                     fontMap[name]?.let { tf ->
                         val el = canvasView.elements[selectedIndex]
-                        el.typeface = tf
-                        el.fontName = name
-                        canvasView.invalidate()
-                        toast("فونت $name اعمال شد")
+                        if (el is CanvasView.TextElement) {
+                            pushUndo()
+                            el.typeface = tf; el.fontName = name
+                            canvasView.invalidate()
+                            toast("فونت $name اعمال شد")
+                        }
                     }
                 }
             }
@@ -186,43 +280,61 @@ class MainActivity : AppCompatActivity() {
 
     private fun showColorPicker() {
         val colors = arrayOf(
-            0xFF000000.toInt() to "سیاه",
-            0xFFFFFFFF.toInt() to "سفید",
-            0xFFFF0000.toInt() to "قرمز",
-            0xFF0000FF.toInt() to "آبی",
-            0xFF008000.toInt() to "سبز",
-            0xFFFFA500.toInt() to "نارنجی",
-            0xFF800080.toInt() to "بنفش",
-            0xFFFFD700.toInt() to "طلایی",
-            0xFF00FFFF.toInt() to "فیروزه‌ای",
-            0xFFFF69B4.toInt() to "صورتی",
-            0xFFA52A2A.toInt() to "قهوه‌ای",
-            0xFF808080.toInt() to "خاکستری"
+            0xFF000000.toInt() to "سیاه", 0xFFFFFFFF.toInt() to "سفید",
+            0xFFFF0000.toInt() to "قرمز", 0xFF0000FF.toInt() to "آبی",
+            0xFF008000.toInt() to "سبز", 0xFFFFA500.toInt() to "نارنجی",
+            0xFF800080.toInt() to "بنفش", 0xFFFFD700.toInt() to "طلایی",
+            0xFF00FFFF.toInt() to "فیروزه‌ای", 0xFFFF69B4.toInt() to "صورتی",
+            0xFFA52A2A.toInt() to "قهوه‌ای", 0xFF808080.toInt() to "خاکستری"
         )
         val gridLayout = android.widget.GridLayout(this).apply {
-            columnCount = 4
-            rowCount = 3
-            useDefaultMargins = true
+            columnCount = 4; rowCount = 3; useDefaultMargins = true
         }
-        val swatches = colors.map { (color, name) ->
-            View(this).apply {
+        for ((color, _) in colors) {
+            val v = View(this).apply {
                 setBackgroundColor(color)
                 layoutParams = ViewGroup.LayoutParams(80, 80)
                 setOnClickListener {
-                    canvasView.elements[selectedIndex].color = color
-                    canvasView.invalidate()
-                    // بستن دیالوگ
+                    val el = canvasView.elements[selectedIndex]
+                    if (el is CanvasView.TextElement) {
+                        pushUndo()
+                        el.color = color
+                        canvasView.invalidate()
+                    }
                     (parent?.parent?.parent as? AlertDialog)?.dismiss()
                 }
             }
+            gridLayout.addView(v)
         }
-        swatches.forEach { gridLayout.addView(it) }
-
         AlertDialog.Builder(this)
             .setTitle("رنگ متن")
             .setView(gridLayout)
             .setNegativeButton("انصراف", null)
             .show()
+    }
+
+    private fun addSticker(uri: Uri) {
+        try {
+            val inputStream = contentResolver.openInputStream(uri) ?: return
+            val bitmap = BitmapFactory.decodeStream(inputStream)
+            inputStream.close()
+            if (bitmap == null) return
+
+            val maxWidth = 300f
+            val scale = min(maxWidth / bitmap.width, 1f)
+            val w = bitmap.width * scale
+            val h = bitmap.height * scale
+
+            pushUndo()
+            val element = CanvasView.ImageElement(bitmap, 640f, 360f, w, h)
+            canvasView.elements.add(element)
+            selectedIndex = canvasView.elements.size - 1
+            canvasView.invalidate()
+            updateUI()
+            toast("برچسب اضافه شد")
+        } catch (e: Exception) {
+            toast("خطا در بارگذاری تصویر")
+        }
     }
 
     private fun loadFont(uri: Uri) {
@@ -259,9 +371,7 @@ class MainActivity : AppCompatActivity() {
         for (name in fontNames) {
             val file = File(fontDir, "$name.ttf")
             if (file.exists()) {
-                try {
-                    fontMap[name] = Typeface.createFromFile(file)
-                } catch (_: Exception) {}
+                try { fontMap[name] = Typeface.createFromFile(file) } catch (_: Exception) {}
             }
         }
     }
@@ -270,21 +380,15 @@ class MainActivity : AppCompatActivity() {
     private fun saveImage() {
         GlobalScope.launch(Dispatchers.IO) {
             try {
-                val outW = 3264
-                val outH = 1836
+                val outW = 3264; val outH = 1836
                 val bitmap = Bitmap.createBitmap(outW, outH, Bitmap.Config.ARGB_8888)
                 val canvas = Canvas(bitmap)
                 canvas.drawColor(Color.WHITE)
 
                 val scaleX = outW.toFloat() / 1280f
                 val scaleY = outH.toFloat() / 720f
-                for (e in canvasView.elements) {
-                    val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                        typeface = e.typeface
-                        textSize = e.size * scaleX
-                        color = e.color
-                    }
-                    canvas.drawText(e.text, e.x * scaleX, e.y * scaleY, paint)
+                for (el in canvasView.elements) {
+                    el.draw(canvas, scaleX, scaleY, 0f, 0f)
                 }
 
                 val values = android.content.ContentValues().apply {
@@ -302,14 +406,10 @@ class MainActivity : AppCompatActivity() {
                     toast("تصویر ۳۲۶۴×۱۸۳۶ در گالری ذخیره شد")
                 }
             } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    toast("خطا: ${e.message}")
-                }
+                withContext(Dispatchers.Main) { toast("خطا: ${e.message}") }
             }
         }
     }
 
-    private fun toast(msg: String) {
-        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
-    }
+    private fun toast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
 }
