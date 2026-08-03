@@ -5,34 +5,138 @@ import android.graphics.*
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
+import kotlin.math.*
 
 class CanvasView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null
 ) : View(context, attrs) {
 
+    interface CanvasElement {
+        var x: Float
+        var y: Float
+        var rotation: Float // درجه
+        var locked: Boolean
+        fun draw(canvas: Canvas, scaleX: Float, scaleY: Float, offsetX: Float, offsetY: Float)
+        fun hitTest(touchX: Float, touchY: Float, scaleX: Float, scaleY: Float, offsetX: Float, offsetY: Float): Boolean
+        fun clone(): CanvasElement
+    }
+
     data class TextElement(
         var text: String,
-        var x: Float, // موقعیت در فضای طراحی 1280x720
-        var y: Float,
+        override var x: Float,
+        override var y: Float,
         var size: Float,
         var typeface: Typeface,
         var fontName: String,
         var color: Int = Color.BLACK,
-        var locked: Boolean = false
-    )
+        override var locked: Boolean = false,
+        override var rotation: Float = 0f,
+        var underline: Boolean = false
+    ) : CanvasElement {
+        override fun draw(canvas: Canvas, scaleX: Float, scaleY: Float, offsetX: Float, offsetY: Float) {
+            val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                typeface = this@TextElement.typeface
+                textSize = this@TextElement.size * scaleX
+                color = this@TextElement.color
+            }
+            val px = x * scaleX + offsetX
+            val py = y * scaleY + offsetY
 
-    var elements = mutableListOf<TextElement>()
+            canvas.save()
+            canvas.rotate(rotation, px, py)
+            canvas.drawText(text, px, py, paint)
+            if (underline) {
+                val rect = Rect()
+                paint.getTextBounds(text, 0, text.length, rect)
+                val lineY = py + rect.height() * 0.1f
+                canvas.drawLine(px, lineY, px + rect.width(), lineY, paint)
+            }
+            canvas.restore()
+
+            if (locked) {
+                val lockPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = Color.RED; style = Paint.Style.FILL
+                }
+                canvas.drawRect(px - 10f, py - paint.textSize - 10f, px + 10f, py - paint.textSize, lockPaint)
+            }
+        }
+
+        override fun hitTest(touchX: Float, touchY: Float, scaleX: Float, scaleY: Float, offsetX: Float, offsetY: Float): Boolean {
+            val px = x * scaleX + offsetX
+            val py = y * scaleY + offsetY
+            val paint = Paint().apply {
+                typeface = this@TextElement.typeface
+                textSize = this@TextElement.size * scaleX
+            }
+            val rect = Rect()
+            paint.getTextBounds(text, 0, text.length, rect)
+            val angleRad = Math.toRadians(-rotation.toDouble())
+            val dx = touchX - px
+            val dy = touchY - py
+            val rotX = (dx * cos(angleRad) - dy * sin(angleRad)).toFloat() + px
+            val rotY = (dx * sin(angleRad) + dy * cos(angleRad)).toFloat() + py
+            return rotX in (px)..(px + rect.width()) && rotY in (py - rect.height())..(py)
+        }
+
+        override fun clone(): CanvasElement = copy()
+    }
+
+    data class ImageElement(
+        var bitmap: Bitmap,
+        override var x: Float,
+        override var y: Float,
+        var width: Float,
+        var height: Float,
+        override var rotation: Float = 0f,
+        override var locked: Boolean = false
+    ) : CanvasElement {
+        override fun draw(canvas: Canvas, scaleX: Float, scaleY: Float, offsetX: Float, offsetY: Float) {
+            val px = x * scaleX + offsetX
+            val py = y * scaleY + offsetY
+            val w = width * scaleX
+            val h = height * scaleY
+
+            canvas.save()
+            canvas.rotate(rotation, px, py)
+            val destRect = RectF(px - w / 2, py - h / 2, px + w / 2, py + h / 2)
+            canvas.drawBitmap(bitmap, null, destRect, null)
+            canvas.restore()
+
+            if (locked) {
+                val lockPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = Color.RED; style = Paint.Style.FILL
+                }
+                canvas.drawRect(px - 10f, py - h / 2 - 15f, px + 10f, py - h / 2 + 5f, lockPaint)
+            }
+        }
+
+        override fun hitTest(touchX: Float, touchY: Float, scaleX: Float, scaleY: Float, offsetX: Float, offsetY: Float): Boolean {
+            val px = x * scaleX + offsetX
+            val py = y * scaleY + offsetY
+            val w = width * scaleX
+            val h = height * scaleY
+            val angleRad = Math.toRadians(-rotation.toDouble())
+            val dx = touchX - px
+            val dy = touchY - py
+            val rotX = (dx * cos(angleRad) - dy * sin(angleRad)).toFloat() + px
+            val rotY = (dx * sin(angleRad) + dy * cos(angleRad)).toFloat() + py
+            return rotX in (px - w / 2)..(px + w / 2) && rotY in (py - h / 2)..(py + h / 2)
+        }
+
+        override fun clone(): CanvasElement = copy(bitmap = bitmap)
+    }
+
+    var elements = mutableListOf<CanvasElement>()
     var onElementSelected: ((Int) -> Unit)? = null
 
-    private val designWidth = 1280f
-    private val designHeight = 720f
+    val designWidth = 1280f
+    val designHeight = 720f
     private var scaleX = 1f
     private var scaleY = 1f
     private var offsetX = 0f
     private var offsetY = 0f
 
-    // برای جابجایی
     private var draggingIndex = -1
     private var lastTouchX = 0f
     private var lastTouchY = 0f
@@ -67,20 +171,15 @@ class CanvasView @JvmOverloads constructor(
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 val idx = findElementAt(touchX, touchY)
-                if (idx != -1) {
-                    // شروع کشیدن (در صورت قفل نبودن)
-                    if (!elements[idx].locked) {
-                        draggingIndex = idx
-                        lastTouchX = touchX
-                        lastTouchY = touchY
-                    } else {
-                        draggingIndex = -1
-                    }
+                if (idx != -1 && !elements[idx].locked) {
+                    draggingIndex = idx
+                    lastTouchX = touchX
+                    lastTouchY = touchY
                     onElementSelected?.invoke(idx)
                     performClick()
                 } else {
                     draggingIndex = -1
-                    onElementSelected?.invoke(-1)
+                    onElementSelected?.invoke(if (idx != -1) idx else -1)
                 }
                 return true
             }
@@ -106,18 +205,7 @@ class CanvasView @JvmOverloads constructor(
 
     private fun findElementAt(touchX: Float, touchY: Float): Int {
         for (i in elements.indices.reversed()) {
-            val e = elements[i]
-            val paint = Paint().apply {
-                typeface = e.typeface
-                textSize = e.size * scaleX
-            }
-            val rect = Rect()
-            paint.getTextBounds(e.text, 0, e.text.length, rect)
-            val left = e.x * scaleX + offsetX
-            val top = e.y * scaleY + offsetY - rect.height()
-            val right = left + rect.width()
-            val bottom = top + rect.height()
-            if (touchX in left..right && touchY in top..bottom) return i
+            if (elements[i].hitTest(touchX, touchY, scaleX, scaleY, offsetX, offsetY)) return i
         }
         return -1
     }
@@ -126,32 +214,13 @@ class CanvasView @JvmOverloads constructor(
         super.onDraw(canvas)
         canvas.drawColor(Color.WHITE)
 
-        // حاشیهٔ بوم
         val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.BLACK
-            style = Paint.Style.STROKE
-            strokeWidth = 3f
+            color = Color.BLACK; style = Paint.Style.STROKE; strokeWidth = 3f
         }
         canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), borderPaint)
 
-        for (e in elements) {
-            val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                typeface = e.typeface
-                textSize = e.size * scaleX
-                color = e.color
-            }
-            val x = e.x * scaleX + offsetX
-            val y = e.y * scaleY + offsetY
-            canvas.drawText(e.text, x, y, paint)
-
-            if (e.locked) {
-                val lockPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    this.color = Color.RED
-                    style = Paint.Style.FILL
-                }
-                val lockSize = 10f
-                canvas.drawRect(x - lockSize, y - paint.textSize - lockSize, x + lockSize, y - paint.textSize, lockPaint)
-            }
+        for (element in elements) {
+            element.draw(canvas, scaleX, scaleY, offsetX, offsetY)
         }
     }
 }
