@@ -45,37 +45,33 @@ class CanvasView @JvmOverloads constructor(
             get() = text.split("\n")
 
         override fun draw(canvas: Canvas, scaleX: Float, scaleY: Float, offsetX: Float, offsetY: Float) {
-            if (!visible) return
+    if (!visible) return
+    val px = x * scaleX + offsetX
+    val py = y * scaleY + offsetY
+    val w = width * scaleX
+    val h = height * scaleY
 
-            val lineHeight = size * scaleX * 1.2f
-            val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                typeface = this@TextElement.typeface
-                textSize = this@TextElement.size * scaleX
-                color = this@TextElement.color
-            }
-            val px = x * scaleX + offsetX
-            val py = y * scaleY + offsetY
+    canvas.save()
+    canvas.rotate(rotation, px, py)
+    val destRect = RectF(px - w / 2, py - h / 2, px + w / 2, py + h / 2)
 
-            canvas.save()
-            canvas.rotate(rotation, px, py)
+    if (tintColor != null) {
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            colorFilter = PorterDuffColorFilter(tintColor!!, PorterDuff.Mode.SRC_ATOP)
+        }
+        canvas.drawBitmap(bitmap, null, destRect, paint)   // <-- اصلاح شد
+    } else {
+        canvas.drawBitmap(bitmap, null, destRect, null)
+    }
+    canvas.restore()
 
-            for ((i, line) in lines.withIndex()) {
-                val lineY = py + i * lineHeight
-                canvas.drawText(line, px, lineY, textPaint)
-
-                if (underline) {
-                    val rect = Rect()
-                    textPaint.getTextBounds(line, 0, line.length, rect)
-                    val underlinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                        color = this@TextElement.color
-                        strokeWidth = 4f * scaleX
-                        style = Paint.Style.STROKE
-                    }
-                    val lineUnderY = lineY + rect.height() * 0.35f
-                    canvas.drawLine(px, lineUnderY, px + rect.width(), lineUnderY, underlinePaint)
-                }
-            }
-
+    if (locked) {
+        val lockPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.RED; style = Paint.Style.FILL
+        }
+        canvas.drawRect(px - 10f, py - h / 2 - 15f, px + 10f, py - h / 2 + 5f, lockPaint)
+    }
+}
             canvas.restore()
 
             if (locked) {
