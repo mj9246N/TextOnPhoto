@@ -3,7 +3,6 @@ package com.example.textonphoto
 import android.app.AlertDialog
 import android.content.*
 import android.graphics.*
-import android.graphics.pdf.PdfDocument
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
@@ -15,7 +14,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.coroutines.*
 import java.io.File
-import java.io.FileOutputStream
 import kotlin.math.min
 
 class MainActivity : AppCompatActivity() {
@@ -153,9 +151,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnUndo).setOnClickListener { performUndo() }
         findViewById<Button>(R.id.btnSave).setOnClickListener { saveImage() }
         findViewById<Button>(R.id.btnHistory).setOnClickListener { showHistoryDialog() }
-        findViewById<Button>(R.id.btnPdf).setOnClickListener { savePdf() }
         findViewById<Button>(R.id.btnCanvasSize).setOnClickListener { showCanvasSizeDialog() }
-        findViewById<Button>(R.id.btnLayers).setOnClickListener { showLayersDialog() }
     }
 
     // ===================== تاریخچه =====================
@@ -229,127 +225,6 @@ class MainActivity : AppCompatActivity() {
         }
         container.addView(deleteAllBtn)
         AlertDialog.Builder(this).setTitle("تاریخچه متون")
-            .setView(ScrollView(this).apply { addView(container) })
-            .setPositiveButton("بستن", null).show()
-    }
-
-    // ===================== پنل لایه‌ها =====================
-    private fun showLayersDialog() {
-        val container = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL; setPadding(8,8,8,8)
-        }
-        if (canvasView.elements.isEmpty()) {
-            container.addView(TextView(this).apply { text = "هیچ لایه‌ای وجود ندارد" })
-        } else {
-            for (i in canvasView.elements.indices.reversed()) {
-                val el = canvasView.elements[i]
-                val row = LinearLayout(this).apply {
-                    orientation = LinearLayout.HORIZONTAL
-                    layoutParams = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                    ).apply { setMargins(0,4,0,4) }
-                    gravity = Gravity.CENTER_VERTICAL
-                }
-
-                val preview = TextView(this).apply {
-                    text = if (el is CanvasView.TextElement) "📝 ${el.getPreview()}" else "🖼️ ${el.getPreview()}"
-                    layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-                    textSize = 14f
-                    setOnClickListener {
-                        selectedIndex = i; canvasView.selectedElementIndex = i; updateUI()
-                        toast("لایه انتخاب شد")
-                        (parent?.parent?.parent as? AlertDialog)?.dismiss()
-                    }
-                }
-                row.addView(preview)
-
-                // دکمه قفل
-                var lockBtn = ImageButton(this)
-                lockBtn.setImageResource(if (el.locked) android.R.drawable.ic_lock_lock else android.R.drawable.ic_lock_idle_lock)
-                lockBtn.setOnClickListener {
-                    pushUndo()
-                    el.locked = !el.locked
-                    lockBtn.setImageResource(if (el.locked) android.R.drawable.ic_lock_lock else android.R.drawable.ic_lock_idle_lock)
-                    canvasView.invalidate()
-                }
-                row.addView(lockBtn)
-
-                // دکمه چشم
-                var eyeBtn = ImageButton(this)
-                eyeBtn.setImageResource(if (el.visible) android.R.drawable.ic_menu_view else android.R.drawable.ic_menu_close_clear_cancel)
-                eyeBtn.setOnClickListener {
-                    pushUndo()
-                    el.visible = !el.visible
-                    eyeBtn.setImageResource(if (el.visible) android.R.drawable.ic_menu_view else android.R.drawable.ic_menu_close_clear_cancel)
-                    canvasView.invalidate()
-                }
-                row.addView(eyeBtn)
-
-                // کپی
-                val copyBtn = ImageButton(this).apply {
-                    setImageResource(android.R.drawable.ic_menu_edit)
-                    setOnClickListener {
-                        pushUndo()
-                        val copy = el.clone().apply { x += 30f; y += 30f }
-                        canvasView.elements.add(i + 1, copy)
-                        canvasView.invalidate()
-                        toast("کپی اضافه شد")
-                        (parent?.parent?.parent as? AlertDialog)?.dismiss()
-                    }
-                }
-                row.addView(copyBtn)
-
-                // حذف
-                val deleteBtn = ImageButton(this).apply {
-                    setImageResource(android.R.drawable.ic_menu_delete)
-                    setOnClickListener {
-                        pushUndo()
-                        canvasView.elements.removeAt(i)
-                        if (selectedIndex == i) { selectedIndex = -1; canvasView.selectedElementIndex = -1; updateUI() }
-                        canvasView.invalidate()
-                        toast("حذف شد")
-                        (parent?.parent?.parent as? AlertDialog)?.dismiss()
-                    }
-                }
-                row.addView(deleteBtn)
-
-                // بالا
-                val upBtn = ImageButton(this).apply {
-                    setImageResource(android.R.drawable.arrow_up_float)
-                    setOnClickListener {
-                        if (i < canvasView.elements.size - 1) {
-                            pushUndo()
-                            val temp = canvasView.elements.removeAt(i)
-                            canvasView.elements.add(i + 1, temp)
-                            canvasView.invalidate()
-                            toast("به جلو منتقل شد")
-                            (parent?.parent?.parent as? AlertDialog)?.dismiss()
-                        }
-                    }
-                }
-                row.addView(upBtn)
-
-                // پایین
-                val downBtn = ImageButton(this).apply {
-                    setImageResource(android.R.drawable.arrow_down_float)
-                    setOnClickListener {
-                        if (i > 0) {
-                            pushUndo()
-                            val temp = canvasView.elements.removeAt(i)
-                            canvasView.elements.add(i - 1, temp)
-                            canvasView.invalidate()
-                            toast("به عقب منتقل شد")
-                            (parent?.parent?.parent as? AlertDialog)?.dismiss()
-                        }
-                    }
-                }
-                row.addView(downBtn)
-
-                container.addView(row)
-            }
-        }
-        AlertDialog.Builder(this).setTitle("لایه‌ها")
             .setView(ScrollView(this).apply { addView(container) })
             .setPositiveButton("بستن", null).show()
     }
@@ -432,7 +307,7 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
-    // ===================== اندازه بوم / PDF =====================
+    // ===================== اندازه بوم =====================
     private fun showCanvasSizeDialog() {
         AlertDialog.Builder(this).setTitle("اندازه بوم")
             .setItems(arrayOf("1280x720 (16:9)", "595x842 (A4)", "1280x1280 (1:1)")) { _, w ->
@@ -440,21 +315,6 @@ class MainActivity : AppCompatActivity() {
                 when (w) { 0 -> canvasView.changeCanvasSize(1280f,720f); 1 -> canvasView.changeCanvasSize(595f,842f); 2 -> canvasView.changeCanvasSize(1280f,1280f) }
                 updateUI()
             }.show()
-    }
-
-    private fun savePdf() {
-        val w = canvasView.designWidth.toInt(); val h = canvasView.designHeight.toInt()
-        try {
-            val doc = PdfDocument()
-            val page = doc.startPage(PdfDocument.PageInfo.Builder(w, h, 1).create())
-            val c = page.canvas; c.drawColor(Color.WHITE)
-            val sx = w / canvasView.designWidth; val sy = h / canvasView.designHeight
-            canvasView.elements.forEach { it.draw(c, sx, sy, 0f, 0f) }
-            doc.finishPage(page)
-            val file = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "TextOnPhoto_${System.currentTimeMillis()}.pdf")
-            FileOutputStream(file).use { doc.writeTo(it) }; doc.close()
-            toast("PDF ذخیره شد")
-        } catch (e: Exception) { toast("خطا PDF") }
     }
 
     // ===================== ابزارهای عمومی =====================
