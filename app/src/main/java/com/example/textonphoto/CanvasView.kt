@@ -15,11 +15,12 @@ class CanvasView @JvmOverloads constructor(
     interface CanvasElement {
         var x: Float
         var y: Float
-        var rotation: Float // درجه
+        var rotation: Float
         var locked: Boolean
         fun draw(canvas: Canvas, scaleX: Float, scaleY: Float, offsetX: Float, offsetY: Float)
         fun hitTest(touchX: Float, touchY: Float, scaleX: Float, scaleY: Float, offsetX: Float, offsetY: Float): Boolean
         fun clone(): CanvasElement
+        fun resize(factor: Float) // برای تغییر اندازه یکنواخت
     }
 
     data class TextElement(
@@ -35,7 +36,7 @@ class CanvasView @JvmOverloads constructor(
         var underline: Boolean = false
     ) : CanvasElement {
         override fun draw(canvas: Canvas, scaleX: Float, scaleY: Float, offsetX: Float, offsetY: Float) {
-            val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 typeface = this@TextElement.typeface
                 textSize = this@TextElement.size * scaleX
                 color = this@TextElement.color
@@ -45,12 +46,19 @@ class CanvasView @JvmOverloads constructor(
 
             canvas.save()
             canvas.rotate(rotation, px, py)
-            canvas.drawText(text, px, py, paint)
+            canvas.drawText(text, px, py, textPaint)
+
             if (underline) {
                 val rect = Rect()
-                paint.getTextBounds(text, 0, text.length, rect)
-                val lineY = py + rect.height() * 0.1f
-                canvas.drawLine(px, lineY, px + rect.width(), lineY, paint)
+                textPaint.getTextBounds(text, 0, text.length, rect)
+                // خط زیر با ضخامت بیشتر
+                val underlinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = this@TextElement.color
+                    strokeWidth = 4f * scaleX  // ضخامت در فضای واقعی
+                    style = Paint.Style.STROKE
+                }
+                val lineY = py + rect.height() * 0.15f
+                canvas.drawLine(px, lineY, px + rect.width(), lineY, underlinePaint)
             }
             canvas.restore()
 
@@ -58,7 +66,7 @@ class CanvasView @JvmOverloads constructor(
                 val lockPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                     color = Color.RED; style = Paint.Style.FILL
                 }
-                canvas.drawRect(px - 10f, py - paint.textSize - 10f, px + 10f, py - paint.textSize, lockPaint)
+                canvas.drawRect(px - 10f, py - textPaint.textSize - 10f, px + 10f, py - textPaint.textSize, lockPaint)
             }
         }
 
@@ -80,6 +88,9 @@ class CanvasView @JvmOverloads constructor(
         }
 
         override fun clone(): CanvasElement = copy()
+        override fun resize(factor: Float) {
+            size = (size * factor).coerceIn(5f, 500f)
+        }
     }
 
     data class ImageElement(
@@ -125,6 +136,10 @@ class CanvasView @JvmOverloads constructor(
         }
 
         override fun clone(): CanvasElement = copy(bitmap = bitmap)
+        override fun resize(factor: Float) {
+            width = (width * factor).coerceIn(20f, 1000f)
+            height = (height * factor).coerceIn(20f, 1000f)
+        }
     }
 
     var elements = mutableListOf<CanvasElement>()
