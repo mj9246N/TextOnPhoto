@@ -369,7 +369,7 @@ class MainActivity : AppCompatActivity() {
     private fun saveImage() {
         GlobalScope.launch(Dispatchers.IO) {
             try {
-                val bw = 3264; val bh = 1836
+                val bw = 1280; val bh = 720
                 val bmp = Bitmap.createBitmap(bw, bh, Bitmap.Config.ARGB_8888)
                 val c = Canvas(bmp); c.drawColor(Color.WHITE)
                 val sx = bw / 1280f; val sy = bh / 720f
