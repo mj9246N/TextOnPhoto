@@ -151,7 +151,6 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnUndo).setOnClickListener { performUndo() }
         findViewById<Button>(R.id.btnSave).setOnClickListener { saveImage() }
         findViewById<Button>(R.id.btnHistory).setOnClickListener { showHistoryDialog() }
-        findViewById<Button>(R.id.btnCanvasSize).setOnClickListener { showCanvasSizeDialog() }
     }
 
     // ===================== تاریخچه =====================
@@ -307,16 +306,6 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
-    // ===================== اندازه بوم =====================
-    private fun showCanvasSizeDialog() {
-        AlertDialog.Builder(this).setTitle("اندازه بوم")
-            .setItems(arrayOf("1280x720 (16:9)", "595x842 (A4)", "1280x1280 (1:1)")) { _, w ->
-                pushUndo()
-                when (w) { 0 -> canvasView.changeCanvasSize(1280f,720f); 1 -> canvasView.changeCanvasSize(595f,842f); 2 -> canvasView.changeCanvasSize(1280f,1280f) }
-                updateUI()
-            }.show()
-    }
-
     // ===================== ابزارهای عمومی =====================
     private fun pushUndo() { undoStack.add(canvasView.elements.map { it.clone() }); if (undoStack.size > MAX_UNDO) undoStack.removeAt(0) }
     private fun performUndo() {
@@ -422,7 +411,7 @@ class MainActivity : AppCompatActivity() {
                 val bw = 3264; val bh = 1836
                 val bmp = Bitmap.createBitmap(bw, bh, Bitmap.Config.ARGB_8888)
                 val c = Canvas(bmp); c.drawColor(Color.WHITE)
-                val sx = bw / canvasView.designWidth; val sy = bh / canvasView.designHeight
+                val sx = bw / 1280f; val sy = bh / 720f  // بوم پیش‌فرض
                 canvasView.elements.forEach { it.draw(c, sx, sy, 0f, 0f) }
                 val v = ContentValues().apply {
                     put(MediaStore.Images.Media.DISPLAY_NAME, "TextOnPhoto_${System.currentTimeMillis()}.jpg")
