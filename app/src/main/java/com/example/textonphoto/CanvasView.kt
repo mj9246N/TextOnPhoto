@@ -17,10 +17,13 @@ class CanvasView @JvmOverloads constructor(
         var y: Float
         var rotation: Float
         var locked: Boolean
+        var visible: Boolean
         fun draw(canvas: Canvas, scaleX: Float, scaleY: Float, offsetX: Float, offsetY: Float)
         fun hitTest(touchX: Float, touchY: Float, scaleX: Float, scaleY: Float, offsetX: Float, offsetY: Float): Boolean
         fun clone(): CanvasElement
         fun resize(factor: Float)
+        fun scaleFrom(fromW: Float, fromH: Float, toW: Float, toH: Float)
+        fun getPreview(): String
     }
 
     data class TextElement(
@@ -33,9 +36,11 @@ class CanvasView @JvmOverloads constructor(
         var color: Int = Color.BLACK,
         override var locked: Boolean = false,
         override var rotation: Float = 0f,
-        var underline: Boolean = false
+        var underline: Boolean = false,
+        override var visible: Boolean = true
     ) : CanvasElement {
         override fun draw(canvas: Canvas, scaleX: Float, scaleY: Float, offsetX: Float, offsetY: Float) {
+            if (!visible) return
             val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 typeface = this@TextElement.typeface
                 textSize = this@TextElement.size * scaleX
@@ -68,6 +73,7 @@ class CanvasView @JvmOverloads constructor(
         }
 
         override fun hitTest(touchX: Float, touchY: Float, scaleX: Float, scaleY: Float, offsetX: Float, offsetY: Float): Boolean {
+            if (!visible) return false
             val px = x * scaleX + offsetX
             val py = y * scaleY + offsetY
             val paint = Paint().apply { typeface = this@TextElement.typeface; textSize = this@TextElement.size * scaleX }
@@ -82,10 +88,13 @@ class CanvasView @JvmOverloads constructor(
         }
 
         override fun clone() = copy()
-
-        override fun resize(factor: Float) {
-            size = (size * factor).coerceIn(5f, 500f)
+        override fun resize(factor: Float) { size = (size * factor).coerceIn(5f, 500f) }
+        override fun scaleFrom(fromW: Float, fromH: Float, toW: Float, toH: Float) {
+            x = x * (toW / fromW)
+            y = y * (toH / fromH)
+            size = size * (toW / fromW)
         }
+        override fun getPreview() = if (text.length > 15) text.take(15) + "…" else text
     }
 
     data class ImageElement(
@@ -96,9 +105,11 @@ class CanvasView @JvmOverloads constructor(
         var height: Float,
         override var rotation: Float = 0f,
         override var locked: Boolean = false,
-        var tintColor: Int? = null   // رنگ تینت، null یعنی بدون تینت
+        var tintColor: Int? = null,
+        override var visible: Boolean = true
     ) : CanvasElement {
         override fun draw(canvas: Canvas, scaleX: Float, scaleY: Float, offsetX: Float, offsetY: Float) {
+            if (!visible) return
             val px = x * scaleX + offsetX
             val py = y * scaleY + offsetY
             val w = width * scaleX
@@ -124,6 +135,7 @@ class CanvasView @JvmOverloads constructor(
         }
 
         override fun hitTest(touchX: Float, touchY: Float, scaleX: Float, scaleY: Float, offsetX: Float, offsetY: Float): Boolean {
+            if (!visible) return false
             val px = x * scaleX + offsetX
             val py = y * scaleY + offsetY
             val w = width * scaleX
@@ -141,36 +153,64 @@ class CanvasView @JvmOverloads constructor(
             width = (width * factor).coerceIn(20f, 1000f)
             height = (height * factor).coerceIn(20f, 1000f)
         }
+        override fun scaleFrom(fromW: Float, fromH: Float, toW: Float, toH: Float) {
+            x = x * (toW / fromW)
+            y = y * (toH / fromH)
+            width = width * (toW / fromW)
+            height = height * (toH / fromH)
+        }
+        override fun getPreview() = "🖼️ عکس"
     }
 
     var elements = mutableListOf<CanvasElement>()
     var onElementSelected: ((Int) -> Unit)? = null
     var selectedElementIndex: Int = -1
-        set(value) {
-            field = value
-            invalidate()
-        }
+        set(value) { field = value; invalidate() }
 
-    val designWidth = 1280f
-    val designHeight = 720f
-    private var scaleX = 1f; private var scaleY = 1f
-    private var offsetX = 0f; private var offsetY = 0f
+    var designWidth = 1280f
+    var designHeight = 720f
+
+    private var scaleX = 1f
+    private var scaleY = 1f
+    private var offsetX = 0f
+    private var offsetY = 0f
 
     private var draggingIndex = -1
-    private var lastTouchX = 0f; private var lastTouchY = 0f
+    private var lastTouchX = 0f
+    private var lastTouchY = 0f
+
+    fun changeCanvasSize(newWidth: Float, newHeight: Float) {
+        if (newWidth == designWidth && newHeight == designHeight) return
+        val oldW = designWidth
+        val oldH = designHeight
+        designWidth = newWidth
+        designHeight = newHeight
+        for (e in elements) {
+            e.scaleFrom(oldW, oldH, newWidth, newHeight)
+        }
+        requestLayout()
+        invalidate()
+    }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        val w = MeasureSpec.getSize(widthMeasureSpec); val h = MeasureSpec.getSize(heightMeasureSpec)
-        val viewRatio = w.toFloat() / h.toFloat(); val designRatio = designWidth / designHeight
-        val actualWidth: Float; val actualHeight: Float
+        val w = MeasureSpec.getSize(widthMeasureSpec)
+        val h = MeasureSpec.getSize(heightMeasureSpec)
+        val designRatio = designWidth / designHeight
+        val viewRatio = w.toFloat() / h.toFloat()
+        val actualWidth: Float
+        val actualHeight: Float
         if (viewRatio > designRatio) {
-            actualHeight = h.toFloat(); actualWidth = h.toFloat() * designRatio
+            actualHeight = h.toFloat()
+            actualWidth = h.toFloat() * designRatio
         } else {
-            actualWidth = w.toFloat(); actualHeight = w.toFloat() / designRatio
+            actualWidth = w.toFloat()
+            actualHeight = w.toFloat() / designRatio
         }
         setMeasuredDimension(actualWidth.toInt(), actualHeight.toInt())
-        scaleX = actualWidth / designWidth; scaleY = actualHeight / designHeight
-        offsetX = 0f; offsetY = 0f
+        scaleX = actualWidth / designWidth
+        scaleY = actualHeight / designHeight
+        offsetX = 0f
+        offsetY = 0f
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -222,9 +262,8 @@ class CanvasView @JvmOverloads constructor(
         val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK; style = Paint.Style.STROKE; strokeWidth = 3f }
         canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), borderPaint)
         for (element in elements) {
-            element.draw(canvas, scaleX, scaleY, offsetX, offsetY)
+            if (element.visible) element.draw(canvas, scaleX, scaleY, offsetX, offsetY)
         }
-        // رسم کادر انتخاب
         if (selectedElementIndex in elements.indices) {
             val el = elements[selectedElementIndex]
             val box = getElementBoundingBox(el)
@@ -248,10 +287,8 @@ class CanvasView @JvmOverloads constructor(
                 val left = px; val top = py - rect.height(); val right = px + rect.width(); val bottom = py
                 val angle = Math.toRadians(element.rotation.toDouble())
                 val corners = arrayOf(
-                    floatArrayOf(left, top),
-                    floatArrayOf(right, top),
-                    floatArrayOf(right, bottom),
-                    floatArrayOf(left, bottom)
+                    floatArrayOf(left, top), floatArrayOf(right, top),
+                    floatArrayOf(right, bottom), floatArrayOf(left, bottom)
                 )
                 var minX = Float.MAX_VALUE; var minY = Float.MAX_VALUE
                 var maxX = Float.MIN_VALUE; var maxY = Float.MIN_VALUE
@@ -269,12 +306,7 @@ class CanvasView @JvmOverloads constructor(
                 val w = element.width * scaleX; val h = element.height * scaleY
                 val left = px - w/2; val top = py - h/2; val right = px + w/2; val bottom = py + h/2
                 val angle = Math.toRadians(element.rotation.toDouble())
-                val corners = arrayOf(
-                    floatArrayOf(left, top),
-                    floatArrayOf(right, top),
-                    floatArrayOf(right, bottom),
-                    floatArrayOf(left, bottom)
-                )
+                val corners = arrayOf(floatArrayOf(left, top), floatArrayOf(right, top), floatArrayOf(right, bottom), floatArrayOf(left, bottom))
                 var minX = Float.MAX_VALUE; var minY = Float.MAX_VALUE
                 var maxX = Float.MIN_VALUE; var maxY = Float.MIN_VALUE
                 for (corner in corners) {
