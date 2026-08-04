@@ -183,11 +183,15 @@ class MainActivity : AppCompatActivity() {
             for ((index, text) in historyTexts.withIndex()) {
                 val row = LinearLayout(this).apply {
                     orientation = LinearLayout.HORIZONTAL
-                    layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { setMargins(0,4,0,4) }
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).apply { setMargins(0,4,0,4) }
                     gravity = Gravity.CENTER_VERTICAL
                 }
                 val tv = TextView(this).apply {
-                    text = text; layoutParams = LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f)
+                    text = text
+                    layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
                     textSize = 16f; maxLines = 2
                 }
                 val copyBtn = ImageButton(this).apply {
@@ -241,13 +245,17 @@ class MainActivity : AppCompatActivity() {
                 val el = canvasView.elements[i]
                 val row = LinearLayout(this).apply {
                     orientation = LinearLayout.HORIZONTAL
-                    layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { setMargins(0,4,0,4) }
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).apply { setMargins(0,4,0,4) }
                     gravity = Gravity.CENTER_VERTICAL
                 }
 
                 val preview = TextView(this).apply {
                     text = if (el is CanvasView.TextElement) "📝 ${el.getPreview()}" else "🖼️ ${el.getPreview()}"
-                    layoutParams = LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f); textSize = 14f
+                    layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                    textSize = 14f
                     setOnClickListener {
                         selectedIndex = i; canvasView.selectedElementIndex = i; updateUI()
                         toast("لایه انتخاب شد")
@@ -503,24 +511,79 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun addSticker(uri: Uri) {
-        try { val bmp = BitmapFactory.decodeStream(contentResolver.openInputStream(uri)); if(bmp==null) return; val s = min(300f/bmp.width, 1f); pushUndo(); val el = CanvasView.ImageElement(bmp,640f,360f,bmp.width*s,bmp.height*s); canvasView.elements.add(el); selectedIndex=canvasView.elements.size-1; canvasView.selectedElementIndex=selectedIndex; canvasView.invalidate(); updateUI(); toast("برچسب اضافه شد") } catch(e:Exception){ toast("خطا") }
+        try {
+            val inputStream = contentResolver.openInputStream(uri) ?: return
+            val bmp = BitmapFactory.decodeStream(inputStream)
+            inputStream.close()
+            if (bmp == null) return
+            val s = min(300f / bmp.width, 1f)
+            pushUndo()
+            val el = CanvasView.ImageElement(bmp, 640f, 360f, bmp.width * s, bmp.height * s)
+            canvasView.elements.add(el)
+            selectedIndex = canvasView.elements.size - 1
+            canvasView.selectedElementIndex = selectedIndex
+            canvasView.invalidate()
+            updateUI()
+            toast("برچسب اضافه شد")
+        } catch (e: Exception) { toast("خطا در بارگذاری تصویر") }
     }
 
     private fun loadFont(uri: Uri) {
-        try { val inp = contentResolver.openInputStream(uri) ?: return; val dir = File(filesDir,"fonts"); if(!dir.exists()) dir.mkdirs(); val name = uri.lastPathSegment ?: "font.ttf"; val dest = File(dir,name); dest.outputStream().use { inp.copyTo(it) }; val tf = Typeface.createFromFile(dest); val fname = name.removeSuffix(".ttf").removeSuffix(".TTF"); fontMap[fname]=tf; if(!fontNames.contains(fname)){ fontNames.add(fname); saveFontList() }; toast("فونت '$fname' اضافه شد") } catch(e:Exception){ toast("خطا") }
+        try {
+            val inp = contentResolver.openInputStream(uri) ?: return
+            val dir = File(filesDir, "fonts"); if (!dir.exists()) dir.mkdirs()
+            val name = uri.lastPathSegment ?: "font.ttf"
+            val dest = File(dir, name)
+            dest.outputStream().use { inp.copyTo(it) }
+            inp.close()
+            val tf = Typeface.createFromFile(dest)
+            val fname = name.removeSuffix(".ttf").removeSuffix(".TTF")
+            fontMap[fname] = tf
+            if (!fontNames.contains(fname)) { fontNames.add(fname); saveFontList() }
+            toast("فونت '$fname' اضافه شد")
+        } catch (e: Exception) { toast("خطا در بارگذاری فونت") }
     }
 
-    private fun saveFontList() { getSharedPreferences("fonts",0).edit().putStringSet("names", fontNames.toSet()).apply() }
-    private fun loadStoredFonts() { val names = getSharedPreferences("fonts",0).getStringSet("names", emptySet())?: emptySet(); fontNames.addAll(names); val dir = File(filesDir,"fonts"); for(n in fontNames){ val f=File(dir,"$n.ttf"); if(f.exists()) try{ fontMap[n]=Typeface.createFromFile(f) }catch(_:Exception){} } }
+    private fun saveFontList() { getSharedPreferences("fonts", 0).edit().putStringSet("names", fontNames.toSet()).apply() }
+    private fun loadStoredFonts() {
+        val names = getSharedPreferences("fonts", 0).getStringSet("names", emptySet()) ?: emptySet()
+        fontNames.addAll(names)
+        val dir = File(filesDir, "fonts")
+        for (n in fontNames) {
+            val f = File(dir, "$n.ttf")
+            if (f.exists()) try { fontMap[n] = Typeface.createFromFile(f) } catch (_: Exception) {}
+        }
+    }
 
     @OptIn(DelicateCoroutinesApi::class)
     private fun saveImage() {
         GlobalScope.launch(Dispatchers.IO) {
-            try { val bw=3264; val bh=1836; val bmp=Bitmap.createBitmap(bw,bh,Bitmap.Config.ARGB_8888); val c=Canvas(bmp); c.drawColor(Color.WHITE); val sx=bw/canvasView.designWidth; val sy=bh/canvasView.designHeight; canvasView.elements.forEach { it.draw(c,sx,sy,0f,0f) }; val v=android.content.ContentValues().apply{put(MediaStore.Images.Media.DISPLAY_NAME,"TextOnPhoto_${System.currentTimeMillis()}.jpg"); put(MediaStore.Images.Media.MIME_TYPE,"image/jpeg"); put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)}; val uri=contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,v); uri?.let{contentResolver.openOutputStream(it)?.use{ out-> bmp.compress(Bitmap.CompressFormat.JPEG,100,out) } }; withContext(Dispatchers.Main){ toast("تصویر در گالری ذخیره شد") } } catch(e:Exception){ withContext(Dispatchers.Main){ toast("خطا: ${e.message}") } }
+            try {
+                val bw = 3264; val bh = 1836
+                val bmp = Bitmap.createBitmap(bw, bh, Bitmap.Config.ARGB_8888)
+                val c = Canvas(bmp); c.drawColor(Color.WHITE)
+                val sx = bw / canvasView.designWidth; val sy = bh / canvasView.designHeight
+                canvasView.elements.forEach { it.draw(c, sx, sy, 0f, 0f) }
+                val v = ContentValues().apply {
+                    put(MediaStore.Images.Media.DISPLAY_NAME, "TextOnPhoto_${System.currentTimeMillis()}.jpg")
+                    put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                    put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
+                }
+                val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, v)
+                uri?.let { contentResolver.openOutputStream(it)?.use { out -> bmp.compress(Bitmap.CompressFormat.JPEG, 100, out) } }
+                withContext(Dispatchers.Main) { toast("تصویر در گالری ذخیره شد") }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) { toast("خطا: ${e.message}") }
+            }
         }
     }
 
-    private fun getCircledNumber(n:Int) = when { n in 1..20 -> String(Character.toChars(0x2460+n-1)); n in 21..35 -> String(Character.toChars(0x3251+n-21)); n in 36..50 -> String(Character.toChars(0x32B1+n-36)); else -> "($n)" }
+    private fun getCircledNumber(n: Int) = when {
+        n in 1..20 -> String(Character.toChars(0x2460 + n - 1))
+        n in 21..35 -> String(Character.toChars(0x3251 + n - 21))
+        n in 36..50 -> String(Character.toChars(0x32B1 + n - 36))
+        else -> "($n)"
+    }
     private fun Int.dpToPx() = (this * resources.displayMetrics.density).toInt()
-    private fun toast(msg:String) = Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+    private fun toast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
 }
