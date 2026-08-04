@@ -229,7 +229,7 @@ class MainActivity : AppCompatActivity() {
                 .show()
         }
 
-        builder.setPositiveButton("بستن❌") { dialog, _ -> dialog.dismiss() }
+        builder.setPositiveButton("بستن") { dialog, _ -> dialog.dismiss() }
         builder.setNeutralButton("حذف همه🗑️") { _, _ ->
             historyTexts.clear()
             saveHistory()
