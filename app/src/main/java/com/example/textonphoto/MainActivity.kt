@@ -343,7 +343,8 @@ class MainActivity : AppCompatActivity() {
     private fun showColorPicker(forImage: Boolean) {
         val colors = arrayOf<Pair<Int?,String>>(0xFF000000.toInt() to "سیاه", 0xFFFFFFFF.toInt() to "سفید", 0xFFFF0000.toInt() to "قرمز", 0xFF0000FF.toInt() to "آبی", 0xFF008000.toInt() to "سبز", 0xFFFFA500.toInt() to "نارنجی", 0xFF800080.toInt() to "بنفش", 0xFFFFD700.toInt() to "طلایی", 0xFF00FFFF.toInt() to "فیروزه‌ای", 0xFFFF69B4.toInt() to "صورتی", 0xFFA52A2A.toInt() to "قهوه‌ای", 0xFF808080.toInt() to "خاکستری")
         val grid = android.widget.GridLayout(this).apply { columnCount = 4; rowCount = 3; useDefaultMargins = true }
-        val el = canvasView.elements[selectedIndex]; val list = colors.toMutableList(); if (forImage) list.add(null to "بدون رنگ")
+        val el = canvasView.elements[selectedIndex]
+        val list = colors.toMutableList(); if (forImage) list.add(null to "بدون رنگ")
         for ((color, _) in list) {
             val v = View(this).apply { setBackgroundColor(color ?: Color.TRANSPARENT); layoutParams = ViewGroup.LayoutParams(80,80)
                 setOnClickListener {
@@ -411,7 +412,7 @@ class MainActivity : AppCompatActivity() {
                 val bw = 3264; val bh = 1836
                 val bmp = Bitmap.createBitmap(bw, bh, Bitmap.Config.ARGB_8888)
                 val c = Canvas(bmp); c.drawColor(Color.WHITE)
-                val sx = bw / 1280f; val sy = bh / 720f  // بوم پیش‌فرض
+                val sx = bw / 1280f; val sy = bh / 720f
                 canvasView.elements.forEach { it.draw(c, sx, sy, 0f, 0f) }
                 val v = ContentValues().apply {
                     put(MediaStore.Images.Media.DISPLAY_NAME, "TextOnPhoto_${System.currentTimeMillis()}.jpg")
