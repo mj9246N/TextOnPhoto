@@ -32,6 +32,9 @@ class MainActivity : AppCompatActivity() {
 
     private val historyTexts = mutableListOf<String>()
 
+    // ذخیره‌سازی آخرین فونت انتخاب‌شده
+    private var lastUsedFont: String? = null
+
     private val openFontLauncher = registerForActivityResult(
         ActivityResultContracts.OpenDocument()
     ) { uri -> uri?.let { loadFont(it) } }
@@ -50,7 +53,7 @@ class MainActivity : AppCompatActivity() {
         btnLock = findViewById(R.id.btnLock)
         btnStyle = findViewById(R.id.btnStyle)
 
-        loadStoredFonts()
+        loadStoredFonts()   // بارگذاری لیست فونت‌ها و آخرین فونت استفاده‌شده
         pushUndo()
 
         canvasView.onElementSelected = { idx ->
@@ -154,6 +157,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnUndo).setOnClickListener { performUndo() }
         findViewById<Button>(R.id.btnSave).setOnClickListener { saveImage() }
 
+        // دکمه تاریخچه (حالا در نوار ابزار پایین)
         findViewById<Button>(R.id.btnHistory).setOnClickListener { showHistoryDialog() }
     }
 
@@ -171,10 +175,13 @@ class MainActivity : AppCompatActivity() {
             setPadding(8, 8, 8, 8)
         }
         if (historyTexts.isEmpty()) {
-            container.addView(TextView(this).apply { text = "تاریخچه خالی است" })
+            container.addView(TextView(this).apply {
+                text = "تاریخچه خالی است"
+                setTextColor(Color.BLACK)
+            })
         } else {
             for (i in historyTexts.indices) {
-                var text = historyTexts[i]  // استفاده از var
+                var text = historyTexts[i]
                 val row = LinearLayout(this).apply {
                     orientation = LinearLayout.HORIZONTAL
                     layoutParams = LinearLayout.LayoutParams(
@@ -188,6 +195,7 @@ class MainActivity : AppCompatActivity() {
                     layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
                     textSize = 16f
                     maxLines = 2
+                    setTextColor(Color.BLACK)
                 }
                 val copyBtn = ImageButton(this).apply {
                     setImageResource(android.R.drawable.ic_menu_edit)
@@ -204,7 +212,10 @@ class MainActivity : AppCompatActivity() {
                         container.removeView(row)
                         if (historyTexts.isEmpty()) {
                             container.removeAllViews()
-                            container.addView(TextView(context).apply { text = "تاریخچه خالی است" })
+                            container.addView(TextView(context).apply {
+                                text = "تاریخچه خالی است"
+                                setTextColor(Color.BLACK)
+                            })
                         }
                         toast("حذف شد")
                     }
@@ -220,7 +231,10 @@ class MainActivity : AppCompatActivity() {
             setOnClickListener {
                 historyTexts.clear()
                 container.removeAllViews()
-                container.addView(TextView(context).apply { text = "تاریخچه خالی است" })
+                container.addView(TextView(context).apply {
+                    text = "تاریخچه خالی است"
+                    setTextColor(Color.BLACK)
+                })
                 toast("همه حذف شدند")
             }
         }
@@ -233,8 +247,7 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    // ===================== افزودن متن (با اعداد) =====================
-    private var numberButtonSize = 44
+    // ===================== افزودن متن (با اعداد و فونت پیش‌فرض هوشمند) =====================
     private fun showAddTextDialog() {
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -246,17 +259,52 @@ class MainActivity : AppCompatActivity() {
             hint = "متن خود را بنویسید"
         }
         layout.addView(editText)
-        addNumberPicker(layout, editText)
+
+        // اعداد دایره‌ای با اندازه ثابت
+        val numContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+        }
+        val hscroll = HorizontalScrollView(this)
+        for (i in 1..50) {
+            val btn = TextView(this).apply {
+                text = getCircledNumber(i)
+                background = getDrawable(R.drawable.circle_number_bg)
+                gravity = Gravity.CENTER
+                val size = (44 * resources.displayMetrics.density).toInt()
+                width = size
+                height = size
+                textSize = 16f
+                setOnClickListener {
+                    val start = maxOf(editText.selectionStart, 0)
+                    val end = maxOf(editText.selectionEnd, 0)
+                    editText.text.replace(start, end, text)
+                    editText.setSelection(start + text.length)
+                }
+            }
+            numContainer.addView(btn)
+        }
+        hscroll.addView(numContainer)
+        layout.addView(hscroll)
 
         AlertDialog.Builder(this).setTitle("متن جدید").setView(layout)
             .setPositiveButton("افزودن") { _, _ ->
                 val text = editText.text.toString().trim()
                 if (text.isNotEmpty()) {
                     pushUndo()
-                    val df = fontMap[fontNames.lastOrNull()] ?: Typeface.DEFAULT
-                    val el = CanvasView.TextElement(
-                        text, 640f, 360f, 60f, df,
+                    // انتخاب فونت: آخرین فونت استفاده‌شده، در غیر این صورت آخرین فونت موجود، وگرنه پیش‌فرض
+                    val defaultFont = if (lastUsedFont != null && fontMap.containsKey(lastUsedFont)) {
+                        fontMap[lastUsedFont]!!
+                    } else {
+                        fontMap[fontNames.lastOrNull()] ?: Typeface.DEFAULT
+                    }
+                    val fontNameToUse = if (lastUsedFont != null && fontMap.containsKey(lastUsedFont)) {
+                        lastUsedFont!!
+                    } else {
                         fontNames.lastOrNull() ?: "پیش‌فرض"
+                    }
+
+                    val el = CanvasView.TextElement(
+                        text, 640f, 360f, 60f, defaultFont, fontNameToUse
                     )
                     canvasView.elements.add(el)
                     selectedIndex = canvasView.elements.size - 1
@@ -270,6 +318,7 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
+    // ===================== ویرایش متن =====================
     private fun showEditTextDialog(textEl: CanvasView.TextElement) {
         val editText = EditText(this).apply {
             setText(textEl.text)
@@ -292,41 +341,96 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun addNumberPicker(parent: LinearLayout, editText: EditText) {
-        val seekBar = SeekBar(this).apply { max = 80; progress = numberButtonSize - 20 }
-        val seekLabel = TextView(this).apply { text = "اندازه اعداد: ${numberButtonSize}dp" }
-        parent.addView(seekLabel); parent.addView(seekBar)
-        val numContainer = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; id = View.generateViewId() }
-        val scroll = HorizontalScrollView(this); scroll.addView(numContainer); parent.addView(scroll)
-
-        fun rebuild() {
-            numContainer.removeAllViews()
-            for (i in 1..50) {
-                val btn = TextView(this).apply {
-                    text = getCircledNumber(i)
-                    background = getDrawable(R.drawable.circle_number_bg)
-                    gravity = Gravity.CENTER
-                    width = numberButtonSize.dpToPx(); height = numberButtonSize.dpToPx()
-                    textSize = (numberButtonSize * 0.4f)
-                    setOnClickListener {
-                        val s = maxOf(editText.selectionStart, 0); val e = maxOf(editText.selectionEnd, 0)
-                        editText.text.replace(s, e, text)
-                        editText.setSelection(s + text.length)
-                    }
-                }
-                numContainer.addView(btn)
+    // ===================== فونت (با ذخیره آخرین انتخاب) =====================
+    private fun showFontPicker() {
+        if (fontNames.isEmpty()) {
+            toast("ابتدا فونت اضافه کنید")
+            openFontLauncher.launch(arrayOf("font/ttf", "application/x-font-ttf", "*/*"))
+            return
+        }
+        val adapter = object : ArrayAdapter<String>(this, 0, fontNames.toList()) {
+            override fun getView(pos: Int, cv: View?, parent: ViewGroup): View {
+                val v = cv ?: layoutInflater.inflate(R.layout.item_font_preview, parent, false)
+                val name = getItem(pos)!!
+                v.findViewById<TextView>(R.id.fontName).text = name
+                v.findViewById<TextView>(R.id.fontPreview).typeface = fontMap[name] ?: Typeface.DEFAULT
+                return v
             }
         }
-        rebuild()
-        seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(sb: SeekBar?, p: Int, f: Boolean) {
-                numberButtonSize = p + 20; seekLabel.text = "اندازه اعداد: ${numberButtonSize}dp"; rebuild()
+        AlertDialog.Builder(this).setTitle("انتخاب فونت").setAdapter(adapter) { _, w ->
+            val name = fontNames[w]
+            fontMap[name]?.let { tf ->
+                val el = canvasView.elements[selectedIndex] as CanvasView.TextElement
+                pushUndo()
+                el.typeface = tf
+                el.fontName = name
+                // ذخیره به‌عنوان آخرین فونت استفاده‌شده
+                lastUsedFont = name
+                saveLastUsedFont(name)
+                canvasView.invalidate()
+                toast("فونت $name اعمال شد")
             }
-            override fun onStartTrackingTouch(sb: SeekBar?) {}
-            override fun onStopTrackingTouch(sb: SeekBar?) {}
-        })
+        }.setNeutralButton("بارگذاری جدید") { _, _ ->
+            openFontLauncher.launch(arrayOf("font/ttf", "application/x-font-ttf", "*/*"))
+        }.show()
     }
 
+    private fun saveLastUsedFont(name: String) {
+        getSharedPreferences("fonts", MODE_PRIVATE)
+            .edit().putString("lastFont", name).apply()
+    }
+
+    private fun loadLastUsedFont() {
+        lastUsedFont = getSharedPreferences("fonts", MODE_PRIVATE)
+            .getString("lastFont", null)
+    }
+
+    // ===================== ذخیره و بازیابی فونت‌ها =====================
+    private fun loadFont(uri: Uri) {
+        try {
+            val inp = contentResolver.openInputStream(uri) ?: return
+            val dir = File(filesDir, "fonts"); if (!dir.exists()) dir.mkdirs()
+            val name = uri.lastPathSegment ?: "font.ttf"
+            val dest = File(dir, name)
+            dest.outputStream().use { inp.copyTo(it) }
+            inp.close()
+            val tf = Typeface.createFromFile(dest)
+            val fname = name.removeSuffix(".ttf").removeSuffix(".TTF")
+            fontMap[fname] = tf
+            if (!fontNames.contains(fname)) {
+                fontNames.add(fname)
+                saveFontList()
+            }
+            toast("فونت '$fname' اضافه شد")
+        } catch (e: Exception) { toast("خطا در بارگذاری فونت") }
+    }
+
+    private fun saveFontList() {
+        getSharedPreferences("fonts", MODE_PRIVATE)
+            .edit().putStringSet("names", fontNames.toSet()).apply()
+    }
+
+    private fun loadStoredFonts() {
+        val prefs = getSharedPreferences("fonts", MODE_PRIVATE)
+        val names = prefs.getStringSet("names", emptySet()) ?: emptySet()
+        fontNames.addAll(names)
+        val dir = File(filesDir, "fonts")
+        for (n in fontNames) {
+            val f = File(dir, "$n.ttf")
+            if (f.exists()) {
+                try { fontMap[n] = Typeface.createFromFile(f) } catch (_: Exception) {}
+            }
+        }
+        // بارگذاری آخرین فونت استفاده‌شده
+        lastUsedFont = prefs.getString("lastFont", null)
+        // اگر فونت ذخیره‌شده دیگر وجود نداشت، پاک شود
+        if (lastUsedFont != null && !fontMap.containsKey(lastUsedFont)) {
+            lastUsedFont = null
+            prefs.edit().remove("lastFont").apply()
+        }
+    }
+
+    // ===================== ابزارهای عمومی =====================
     private fun pushUndo() {
         val snapshot = canvasView.elements.map { it.clone() }
         undoStack.add(snapshot)
@@ -382,35 +486,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun showFontPicker() {
-        if (fontNames.isEmpty()) {
-            toast("ابتدا فونت اضافه کنید")
-            openFontLauncher.launch(arrayOf("font/ttf", "application/x-font-ttf", "*/*"))
-            return
-        }
-        val adapter = object : ArrayAdapter<String>(this, 0, fontNames.toList()) {
-            override fun getView(pos: Int, cv: View?, parent: ViewGroup): View {
-                val v = cv ?: layoutInflater.inflate(R.layout.item_font_preview, parent, false)
-                val name = getItem(pos)!!
-                v.findViewById<TextView>(R.id.fontName).text = name
-                v.findViewById<TextView>(R.id.fontPreview).typeface = fontMap[name] ?: Typeface.DEFAULT
-                return v
-            }
-        }
-        AlertDialog.Builder(this).setTitle("انتخاب فونت").setAdapter(adapter) { _, w ->
-            val name = fontNames[w]
-            fontMap[name]?.let { tf ->
-                val el = canvasView.elements[selectedIndex] as CanvasView.TextElement
-                pushUndo()
-                el.typeface = tf; el.fontName = name
-                canvasView.invalidate()
-                toast("فونت $name اعمال شد")
-            }
-        }.setNeutralButton("بارگذاری جدید") { _, _ ->
-            openFontLauncher.launch(arrayOf("font/ttf", "application/x-font-ttf", "*/*"))
-        }.show()
-    }
-
+    // ===================== رنگ / برچسب / ذخیره =====================
     private fun showColorPicker(forImage: Boolean) {
         val colors = arrayOf<Pair<Int?, String>>(
             0xFF000000.toInt() to "سیاه", 0xFFFFFFFF.toInt() to "سفید",
@@ -453,33 +529,22 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun addSticker(uri: Uri) { /* بدون تغییر */ }
-
-    private fun loadFont(uri: Uri) {
+    private fun addSticker(uri: Uri) {
         try {
-            val inp = contentResolver.openInputStream(uri) ?: return
-            val dir = File(filesDir, "fonts"); if (!dir.exists()) dir.mkdirs()
-            val name = uri.lastPathSegment ?: "font.ttf"
-            val dest = File(dir, name)
-            dest.outputStream().use { inp.copyTo(it) }
-            inp.close()
-            val tf = Typeface.createFromFile(dest)
-            val fname = name.removeSuffix(".ttf").removeSuffix(".TTF")
-            fontMap[fname] = tf
-            if (!fontNames.contains(fname)) { fontNames.add(fname); saveFontList() }
-            toast("فونت '$fname' اضافه شد")
-        } catch (e: Exception) { toast("خطا در بارگذاری فونت") }
-    }
-
-    private fun saveFontList() { getSharedPreferences("fonts", 0).edit().putStringSet("names", fontNames.toSet()).apply() }
-    private fun loadStoredFonts() {
-        val names = getSharedPreferences("fonts", 0).getStringSet("names", emptySet()) ?: emptySet()
-        fontNames.addAll(names)
-        val dir = File(filesDir, "fonts")
-        for (n in fontNames) {
-            val f = File(dir, "$n.ttf")
-            if (f.exists()) try { fontMap[n] = Typeface.createFromFile(f) } catch (_: Exception) {}
-        }
+            val inputStream = contentResolver.openInputStream(uri) ?: return
+            val bmp = BitmapFactory.decodeStream(inputStream)
+            inputStream.close()
+            if (bmp == null) return
+            val s = min(300f / bmp.width, 1f)
+            pushUndo()
+            val el = CanvasView.ImageElement(bmp, 640f, 360f, bmp.width * s, bmp.height * s)
+            canvasView.elements.add(el)
+            selectedIndex = canvasView.elements.size - 1
+            canvasView.selectedElementIndex = selectedIndex
+            canvasView.invalidate()
+            updateUI()
+            toast("برچسب اضافه شد")
+        } catch (e: Exception) { toast("خطا در بارگذاری تصویر") }
     }
 
     @OptIn(DelicateCoroutinesApi::class)
