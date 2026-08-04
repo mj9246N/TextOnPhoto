@@ -28,6 +28,8 @@ class MainActivity : AppCompatActivity() {
     private val undoStack = mutableListOf<List<CanvasView.CanvasElement>>()
     private val MAX_UNDO = 100
 
+    // تاریخچه پایدار (ذخیره در فایل)
+    private val historyFile by lazy { File(filesDir, "history.txt") }
     private val historyTexts = mutableListOf<String>()
 
     private var defaultTypeface: Typeface = Typeface.DEFAULT
@@ -46,6 +48,7 @@ class MainActivity : AppCompatActivity() {
         btnLock = findViewById(R.id.btnLock)
         btnStyle = findViewById(R.id.btnStyle)
 
+        // بارگذاری فونت پیش‌فرض
         try {
             defaultTypeface = Typeface.createFromAsset(assets, "fonts/default.ttf")
             Toast.makeText(this, "فونت پیش‌فرض با موفقیت بارگذاری شد", Toast.LENGTH_SHORT).show()
@@ -53,6 +56,9 @@ class MainActivity : AppCompatActivity() {
             defaultTypeface = Typeface.DEFAULT
             Toast.makeText(this, "فونت پیش‌فرض یافت نشد! مسیر: assets/fonts/default.ttf", Toast.LENGTH_LONG).show()
         }
+
+        // بارگذاری تاریخچه از فایل
+        loadHistory()
 
         pushUndo()
 
@@ -153,16 +159,27 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnHistory).setOnClickListener { showHistoryDialog() }
     }
 
-    // ===================== تاریخچه (بدون خطای val) =====================
+    // ===================== تاریخچه (پایدار با فایل) =====================
+    private fun loadHistory() {
+        if (historyFile.exists()) {
+            historyTexts.clear()
+            historyTexts.addAll(historyFile.readLines().filter { it.isNotBlank() })
+        }
+    }
+
+    private fun saveHistory() {
+        historyFile.writeText(historyTexts.joinToString("\n"))
+    }
+
     private fun addToHistory(text: String) {
         if (!historyTexts.contains(text)) {
             historyTexts.add(0, text)
             if (historyTexts.size > 200) historyTexts.removeAt(historyTexts.size - 1)
+            saveHistory()
         }
     }
 
     private fun showHistoryDialog() {
-        // ساخت دیالوگ با لیست ساده
         val builder = AlertDialog.Builder(this, android.R.style.Theme_Material_Light_Dialog_Alert)
         builder.setTitle("تاریخچه متون")
 
@@ -173,38 +190,36 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        // استفاده از یک لیست ساده با آداپتور سفارشی
+        // آداپتور لیست
         val listAdapter = object : ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, historyTexts.toList()) {
             override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
                 val view = convertView ?: layoutInflater.inflate(android.R.layout.simple_list_item_1, parent, false)
                 val textView = view.findViewById<TextView>(android.R.id.text1)
                 textView.text = getItem(position)
-                textView.setTextColor(Color.BLACK) // تضمین رنگ سیاه
+                textView.setTextColor(Color.BLACK)
                 textView.textSize = 16f
                 return view
             }
         }
 
         builder.setAdapter(listAdapter) { dialog, which ->
-            // کلیک روی یک متن: کپی یا حذف؟ فعلاً کپی می‌کنیم
             val selectedText = historyTexts[which]
-            // نمایش زیرمنو
-            val options = arrayOf("کپی", "حذف")
             AlertDialog.Builder(this@MainActivity, android.R.style.Theme_Material_Light_Dialog_Alert)
                 .setTitle(selectedText)
-                .setItems(options) { _, opt ->
+                .setItems(arrayOf("کپی", "حذف")) { _, opt ->
                     when (opt) {
                         0 -> {
-                            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                            clipboard.setPrimaryClip(ClipData.newPlainText("text", selectedText))
+                            (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
+                                .setPrimaryClip(ClipData.newPlainText("text", selectedText))
                             toast("کپی شد")
                         }
                         1 -> {
                             historyTexts.removeAt(which)
+                            saveHistory()
                             listAdapter.notifyDataSetChanged()
                             if (historyTexts.isEmpty()) {
                                 dialog.dismiss()
-                                showHistoryDialog() // بازسازی
+                                showHistoryDialog()
                             }
                             toast("حذف شد")
                         }
@@ -217,7 +232,8 @@ class MainActivity : AppCompatActivity() {
         builder.setPositiveButton("بستن") { dialog, _ -> dialog.dismiss() }
         builder.setNeutralButton("حذف همه") { _, _ ->
             historyTexts.clear()
-            showHistoryDialog() // بازسازی
+            saveHistory()
+            showHistoryDialog()
             toast("همه حذف شدند")
         }
 
@@ -270,7 +286,7 @@ class MainActivity : AppCompatActivity() {
                     selectedIndex = canvasView.elements.size - 1
                     canvasView.selectedElementIndex = selectedIndex
                     canvasView.invalidate(); updateUI()
-                    addToHistory(text)
+                    addToHistory(text)   // ذخیره در تاریخچه پایدار
                 }
             }
             .setNegativeButton("انصراف", null)
@@ -289,7 +305,8 @@ class MainActivity : AppCompatActivity() {
             .setPositiveButton("ذخیره") { _, _ ->
                 val newText = editText.text.toString().trim()
                 if (newText.isNotEmpty()) {
-                    pushUndo(); textEl.text = newText; canvasView.invalidate(); addToHistory(newText)
+                    pushUndo(); textEl.text = newText; canvasView.invalidate()
+                    addToHistory(newText)   // ذخیره در تاریخچه
                 }
             }
             .setNegativeButton("انصراف", null)
