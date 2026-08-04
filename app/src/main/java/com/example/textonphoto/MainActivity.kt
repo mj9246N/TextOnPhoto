@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
+import android.text.InputType
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
@@ -120,25 +121,29 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnRotateRight).setOnClickListener { rotateSelected(5f) }
 
         findViewById<Button>(R.id.btnZoomIn).setOnClickListener {
-            if (selectedIndex == -1 || canvasView.elements[selectedIndex] !is CanvasView.TextElement) return@setOnClickListener
-            val el = canvasView.elements[selectedIndex] as CanvasView.TextElement
+            if (selectedIndex == -1) return@setOnClickListener
+            val el = canvasView.elements[selectedIndex]
             if (el.locked) { toast("قفل است"); return@setOnClickListener }
             pushUndo()
-            el.size += 5f
+            when (el) {
+                is CanvasView.TextElement -> el.resize(1.05f)
+                is CanvasView.ImageElement -> el.resize(1.05f)
+            }
             canvasView.invalidate()
-            tvSize.text = el.size.toInt().toString()
+            updateSizeDisplay()
         }
 
         findViewById<Button>(R.id.btnZoomOut).setOnClickListener {
-            if (selectedIndex == -1 || canvasView.elements[selectedIndex] !is CanvasView.TextElement) return@setOnClickListener
-            val el = canvasView.elements[selectedIndex] as CanvasView.TextElement
+            if (selectedIndex == -1) return@setOnClickListener
+            val el = canvasView.elements[selectedIndex]
             if (el.locked) { toast("قفل است"); return@setOnClickListener }
-            if (el.size > 5f) {
-                pushUndo()
-                el.size -= 5f
-                canvasView.invalidate()
-                tvSize.text = el.size.toInt().toString()
+            pushUndo()
+            when (el) {
+                is CanvasView.TextElement -> { if (el.size > 5f) el.resize(0.95f) }
+                is CanvasView.ImageElement -> { if (el.width > 20f) el.resize(0.95f) }
             }
+            canvasView.invalidate()
+            updateSizeDisplay()
         }
 
         btnLock.setOnClickListener {
@@ -189,6 +194,18 @@ class MainActivity : AppCompatActivity() {
         updateUI()
     }
 
+    private fun updateSizeDisplay() {
+        if (selectedIndex != -1) {
+            val el = canvasView.elements[selectedIndex]
+            when (el) {
+                is CanvasView.TextElement -> tvSize.text = el.size.toInt().toString()
+                is CanvasView.ImageElement -> tvSize.text = "عکس"
+            }
+        } else {
+            tvSize.text = "60"
+        }
+    }
+
     private fun updateUI() {
         if (selectedIndex != -1) {
             val el = canvasView.elements[selectedIndex]
@@ -213,7 +230,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showAddTextDialog() {
-        val editText = EditText(this)
+        val editText = EditText(this).apply {
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+            minLines = 3
+            gravity = android.view.Gravity.TOP
+        }
         AlertDialog.Builder(this)
             .setTitle("متن جدید")
             .setView(editText)
@@ -238,8 +259,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showEditTextDialog(textEl: CanvasView.TextElement) {
-        val editText = EditText(this)
-        editText.setText(textEl.text)
+        val editText = EditText(this).apply {
+            setText(textEl.text)
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+            minLines = 3
+            gravity = android.view.Gravity.TOP
+        }
         AlertDialog.Builder(this)
             .setTitle("ویرایش متن")
             .setView(editText)
