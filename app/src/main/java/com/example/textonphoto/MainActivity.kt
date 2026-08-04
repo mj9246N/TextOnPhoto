@@ -101,7 +101,6 @@ class MainActivity : AppCompatActivity() {
             showFontPicker()
         }
 
-        // دکمه رنگ: هم برای متن و هم برای عکس (تینت)
         findViewById<Button>(R.id.btnColor).setOnClickListener {
             if (selectedIndex == -1) return@setOnClickListener
             val el = canvasView.elements[selectedIndex]
@@ -439,9 +438,8 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    // رنگ‌دهی برای متن یا تینت عکس
     private fun showColorPicker(forImage: Boolean) {
-        val colors = arrayOf(
+        val colors = arrayOf<Pair<Int?, String>>(
             0xFF000000.toInt() to "سیاه", 0xFFFFFFFF.toInt() to "سفید",
             0xFFFF0000.toInt() to "قرمز", 0xFF0000FF.toInt() to "آبی",
             0xFF008000.toInt() to "سبز", 0xFFFFA500.toInt() to "نارنجی",
@@ -453,39 +451,32 @@ class MainActivity : AppCompatActivity() {
             columnCount = 4; rowCount = 3; useDefaultMargins = true
         }
         val el = canvasView.elements[selectedIndex]
-        // اضافه کردن گزینه "بدون رنگ" برای عکس‌ها
+
         val colorList = colors.toMutableList()
         if (forImage) colorList.add(null to "بدون رنگ")
+
         for ((color, name) in colorList) {
             val v = View(this).apply {
                 setBackgroundColor(color ?: Color.TRANSPARENT)
-                if (color == null) {
-                    // نمایش علامت ضربدر یا متن
-                    val paint = Paint().apply { color = Color.BLACK; textSize = 20f; textAlign = Paint.Align.CENTER }
-                    setOnClickListener {
-                        if (el is CanvasView.ImageElement) {
+                setOnClickListener {
+                    when {
+                        color == null && el is CanvasView.ImageElement -> {
                             pushUndo()
-                            el.tintColor = null
+                            (el as CanvasView.ImageElement).tintColor = null
                             canvasView.invalidate()
                         }
-                        (parent?.parent?.parent as? AlertDialog)?.dismiss()
-                    }
-                } else {
-                    setOnClickListener {
-                        when {
-                            el is CanvasView.TextElement -> {
-                                pushUndo()
-                                el.color = color
-                                canvasView.invalidate()
-                            }
-                            el is CanvasView.ImageElement -> {
-                                pushUndo()
-                                el.tintColor = color
-                                canvasView.invalidate()
-                            }
+                        el is CanvasView.TextElement && color != null -> {
+                            pushUndo()
+                            (el as CanvasView.TextElement).color = color
+                            canvasView.invalidate()
                         }
-                        (parent?.parent?.parent as? AlertDialog)?.dismiss()
+                        el is CanvasView.ImageElement && color != null -> {
+                            pushUndo()
+                            (el as CanvasView.ImageElement).tintColor = color
+                            canvasView.invalidate()
+                        }
                     }
+                    (parent?.parent?.parent as? AlertDialog)?.dismiss()
                 }
                 layoutParams = ViewGroup.LayoutParams(80, 80)
             }
