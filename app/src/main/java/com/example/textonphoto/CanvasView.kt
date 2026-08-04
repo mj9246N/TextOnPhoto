@@ -29,7 +29,7 @@ class CanvasView @JvmOverloads constructor(
     data class TextElement(
         var text: String,
         override var x: Float,
-        override var y: Float,         // baseline of first line
+        override var y: Float,
         var size: Float,
         var typeface: Typeface,
         var fontName: String,
@@ -40,20 +40,21 @@ class CanvasView @JvmOverloads constructor(
         override var visible: Boolean = true
     ) : CanvasElement {
 
-        private val lines: List<String>
+        // حالا public است
+        val lines: List<String>
             get() = text.split("\n")
 
         override fun draw(canvas: Canvas, scaleX: Float, scaleY: Float, offsetX: Float, offsetY: Float) {
             if (!visible) return
 
-            val lineHeight = size * scaleX * 1.2f   // فاصله بین خطوط
+            val lineHeight = size * scaleX * 1.2f
             val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 typeface = this@TextElement.typeface
                 textSize = this@TextElement.size * scaleX
                 color = this@TextElement.color
             }
             val px = x * scaleX + offsetX
-            val py = y * scaleY + offsetY   // baseline of first line
+            val py = y * scaleY + offsetY
 
             canvas.save()
             canvas.rotate(rotation, px, py)
@@ -78,10 +79,9 @@ class CanvasView @JvmOverloads constructor(
             canvas.restore()
 
             if (locked) {
-                // نشان‌گر قفل در گوشه‌ی بالا-چپ جعبه کلی
                 val lockPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.RED; style = Paint.Style.FILL }
                 val totalHeight = lines.size * lineHeight
-                val top = py - textPaint.textSize * 0.2f   // تقریبی
+                val top = py - textPaint.textSize * 0.2f
                 canvas.drawRect(px - 10f, top - 10f, px + 10f, top, lockPaint)
             }
         }
@@ -146,7 +146,6 @@ class CanvasView @JvmOverloads constructor(
         var tintColor: Int? = null,
         override var visible: Boolean = true
     ) : CanvasElement {
-        // (بدون تغییر نسبت به آخرین نسخه)
         override fun draw(canvas: Canvas, scaleX: Float, scaleY: Float, offsetX: Float, offsetY: Float) {
             if (!visible) return
             val px = x * scaleX + offsetX
@@ -284,7 +283,6 @@ class CanvasView @JvmOverloads constructor(
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         canvas.drawColor(Color.WHITE)
-        // حاشیه
         val border = Paint().apply { color = Color.BLACK; style = Paint.Style.STROKE; strokeWidth = 3f }
         canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), border)
         for (e in elements) e.draw(canvas, scaleX, scaleY, offsetX, offsetY)
