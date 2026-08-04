@@ -30,7 +30,6 @@ class MainActivity : AppCompatActivity() {
 
     private val historyTexts = mutableListOf<String>()
 
-    // فونت پیش‌فرض (از assets)
     private var defaultTypeface: Typeface = Typeface.DEFAULT
 
     private val pickStickerLauncher = registerForActivityResult(
@@ -47,11 +46,9 @@ class MainActivity : AppCompatActivity() {
         btnLock = findViewById(R.id.btnLock)
         btnStyle = findViewById(R.id.btnStyle)
 
-        // بارگذاری فونت پیش‌فرض
         try {
             defaultTypeface = Typeface.createFromAsset(assets, "fonts/default.ttf")
         } catch (e: Exception) {
-            // در صورت نبود فونت، از فونت سیستمی استفاده کن
             defaultTypeface = Typeface.DEFAULT
         }
 
@@ -93,7 +90,6 @@ class MainActivity : AppCompatActivity() {
             canvasView.invalidate()
             updateUI()
         }
-        // دکمه فونت حذف شده است
         findViewById<Button>(R.id.btnColor).setOnClickListener {
             if (selectedIndex == -1) return@setOnClickListener
             val el = canvasView.elements[selectedIndex]
@@ -174,11 +170,14 @@ class MainActivity : AppCompatActivity() {
                 var text = historyTexts[i]
                 val row = LinearLayout(this).apply {
                     orientation = LinearLayout.HORIZONTAL
-                    layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { setMargins(0,4,0,4) }
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).apply { setMargins(0,4,0,4) }
                     gravity = Gravity.CENTER_VERTICAL
                 }
                 val tv = TextView(this).apply {
-                    text = text; layoutParams = LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f)
+                    text = text; layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
                     textSize = 16f; maxLines = 2; setTextColor(Color.BLACK)
                 }
                 val copyBtn = ImageButton(this).apply {
@@ -227,7 +226,6 @@ class MainActivity : AppCompatActivity() {
         }
         layout.addView(editText)
 
-        // اعداد دایره‌ای
         val numContainer = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         val hscroll = HorizontalScrollView(this)
         for (i in 1..50) {
