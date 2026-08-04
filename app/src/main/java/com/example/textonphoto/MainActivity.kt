@@ -30,7 +30,6 @@ class MainActivity : AppCompatActivity() {
 
     private val historyTexts = mutableListOf<String>()
 
-    // فونت پیش‌فرض
     private var defaultTypeface: Typeface = Typeface.DEFAULT
 
     private val pickStickerLauncher = registerForActivityResult(
@@ -53,7 +52,7 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "فونت پیش‌فرض با موفقیت بارگذاری شد", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             defaultTypeface = Typeface.DEFAULT
-            Toast.makeText(this, "خطا در بارگذاری فونت پیش‌فرض! فونت سیستمی استفاده می‌شود", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "فونت پیش‌فرض یافت نشد! فونت سیستمی استفاده می‌شود. مسیر: assets/fonts/default.ttf", Toast.LENGTH_LONG).show()
         }
 
         pushUndo()
@@ -167,8 +166,9 @@ class MainActivity : AppCompatActivity() {
         val container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(8, 8, 8, 8)
-            setBackgroundColor(Color.WHITE) // پس‌زمینه سفید برای اطمینان
+            setBackgroundColor(Color.WHITE) // پس‌زمینه سفید کامل
         }
+
         if (historyTexts.isEmpty()) {
             container.addView(TextView(this).apply {
                 text = "تاریخچه خالی است"
@@ -176,8 +176,9 @@ class MainActivity : AppCompatActivity() {
                 textSize = 16f
             })
         } else {
+            // استفاده از indices برای جلوگیری از خطای val reassign
             for (i in historyTexts.indices) {
-                val text = historyTexts[i]
+                val text = historyTexts[i]   // val، اما تخصیص مجدد نمی‌شود
                 val row = LinearLayout(this).apply {
                     orientation = LinearLayout.HORIZONTAL
                     layoutParams = LinearLayout.LayoutParams(
@@ -191,7 +192,7 @@ class MainActivity : AppCompatActivity() {
                     layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
                     textSize = 16f
                     maxLines = 2
-                    setTextColor(Color.BLACK) // حتماً سیاه
+                    setTextColor(Color.BLACK)  // حتماً سیاه
                 }
                 val copyBtn = ImageButton(this).apply {
                     setImageResource(android.R.drawable.ic_menu_edit)
@@ -223,6 +224,7 @@ class MainActivity : AppCompatActivity() {
                 container.addView(row)
             }
         }
+
         val deleteAllBtn = Button(this).apply {
             text = "حذف همه"
             setOnClickListener {
@@ -241,7 +243,7 @@ class MainActivity : AppCompatActivity() {
         val scrollView = ScrollView(this)
         scrollView.addView(container)
 
-        // استفاده از تم روشن برای دیالوگ (تضمین متن سیاه)
+        // استفاده از تم روشن برای تضمین رنگ مشکی متون
         AlertDialog.Builder(this, android.R.style.Theme_Material_Light_Dialog_Alert)
             .setTitle("تاریخچه متون")
             .setView(scrollView)
