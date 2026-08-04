@@ -30,11 +30,16 @@ class MainActivity : AppCompatActivity() {
     private val undoStack = mutableListOf<List<CanvasView.CanvasElement>>()
     private val MAX_UNDO = 100
 
-    private val historyFile by lazy { File(filesDir, "history.txt") }
+    // تاریخچه موقت (فقط در حافظه)
     private val historyTexts = mutableListOf<String>()
 
-    private val openFontLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let { loadFont(it) } }
-    private val pickStickerLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri -> uri?.let { addSticker(it) } }
+    private val openFontLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri -> uri?.let { loadFont(it) } }
+
+    private val pickStickerLauncher = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri -> uri?.let { addSticker(it) } }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,7 +52,6 @@ class MainActivity : AppCompatActivity() {
         btnStyle = findViewById(R.id.btnStyle)
 
         loadStoredFonts()
-        loadHistory()
         pushUndo()
 
         canvasView.onElementSelected = { idx ->
@@ -150,27 +154,23 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnSticker).setOnClickListener { pickStickerLauncher.launch("image/*") }
         findViewById<Button>(R.id.btnUndo).setOnClickListener { performUndo() }
         findViewById<Button>(R.id.btnSave).setOnClickListener { saveImage() }
+
+        // تاریخچه (دکمه بالای بوم)
         findViewById<Button>(R.id.btnHistory).setOnClickListener { showHistoryDialog() }
     }
 
-    // ===================== تاریخچه =====================
-    private fun loadHistory() {
-        if (historyFile.exists()) {
-            historyTexts.clear()
-            historyTexts.addAll(historyFile.readLines().filter { it.isNotBlank() })
-        }
-    }
-    private fun saveHistory() { historyFile.writeText(historyTexts.joinToString("\n")) }
+    // ===================== تاریخچه (موقت) =====================
     private fun addToHistory(text: String) {
         if (!historyTexts.contains(text)) {
             historyTexts.add(0, text)
             if (historyTexts.size > 200) historyTexts.removeAt(historyTexts.size - 1)
-            saveHistory()
         }
     }
+
     private fun showHistoryDialog() {
         val container = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL; setPadding(8,8,8,8)
+            orientation = LinearLayout.VERTICAL
+            setPadding(8, 8, 8, 8)
         }
         if (historyTexts.isEmpty()) {
             container.addView(TextView(this).apply { text = "تاریخچه خالی است" })
@@ -181,13 +181,14 @@ class MainActivity : AppCompatActivity() {
                     layoutParams = LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
                         LinearLayout.LayoutParams.WRAP_CONTENT
-                    ).apply { setMargins(0,4,0,4) }
+                    ).apply { setMargins(0, 4, 0, 4) }
                     gravity = Gravity.CENTER_VERTICAL
                 }
                 val tv = TextView(this).apply {
                     text = text
                     layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-                    textSize = 16f; maxLines = 2
+                    textSize = 16f
+                    maxLines = 2
                 }
                 val copyBtn = ImageButton(this).apply {
                     setImageResource(android.R.drawable.ic_menu_edit)
@@ -200,7 +201,7 @@ class MainActivity : AppCompatActivity() {
                 val delBtn = ImageButton(this).apply {
                     setImageResource(android.R.drawable.ic_menu_delete)
                     setOnClickListener {
-                        historyTexts.removeAt(index); saveHistory()
+                        historyTexts.removeAt(index)
                         container.removeView(row)
                         if (historyTexts.isEmpty()) {
                             container.removeAllViews()
@@ -209,32 +210,41 @@ class MainActivity : AppCompatActivity() {
                         toast("حذف شد")
                     }
                 }
-                row.addView(tv); row.addView(copyBtn); row.addView(delBtn)
+                row.addView(tv)
+                row.addView(copyBtn)
+                row.addView(delBtn)
                 container.addView(row)
             }
         }
         val deleteAllBtn = Button(this).apply {
             text = "حذف همه"
             setOnClickListener {
-                historyTexts.clear(); saveHistory()
+                historyTexts.clear()
                 container.removeAllViews()
                 container.addView(TextView(context).apply { text = "تاریخچه خالی است" })
                 toast("همه حذف شدند")
             }
         }
         container.addView(deleteAllBtn)
-        AlertDialog.Builder(this).setTitle("تاریخچه متون")
+
+        AlertDialog.Builder(this)
+            .setTitle("تاریخچه متون")
             .setView(ScrollView(this).apply { addView(container) })
-            .setPositiveButton("بستن", null).show()
+            .setPositiveButton("بستن", null)
+            .show()
     }
 
-    // ===================== متن جدید / ویرایش =====================
+    // ===================== افزودن متن (با اعداد ۱ تا ۵۰) =====================
     private var numberButtonSize = 44
     private fun showAddTextDialog() {
-        val layout = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(16,16,16,16) }
+        val layout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(16, 16, 16, 16)
+        }
         val editText = EditText(this).apply {
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
-            minLines = 3; hint = "متن خود را بنویسید"
+            minLines = 3
+            hint = "متن خود را بنویسید"
         }
         layout.addView(editText)
         addNumberPicker(layout, editText)
@@ -245,38 +255,64 @@ class MainActivity : AppCompatActivity() {
                 if (text.isNotEmpty()) {
                     pushUndo()
                     val df = fontMap[fontNames.lastOrNull()] ?: Typeface.DEFAULT
-                    val el = CanvasView.TextElement(text, 640f, 360f, 60f, df, fontNames.lastOrNull() ?: "پیش‌فرض")
+                    val el = CanvasView.TextElement(
+                        text, 640f, 360f, 60f, df,
+                        fontNames.lastOrNull() ?: "پیش‌فرض"
+                    )
                     canvasView.elements.add(el)
                     selectedIndex = canvasView.elements.size - 1
                     canvasView.selectedElementIndex = selectedIndex
-                    canvasView.invalidate(); updateUI(); addToHistory(text)
+                    canvasView.invalidate()
+                    updateUI()
+                    addToHistory(text)
                 }
             }
-            .setNegativeButton("انصراف", null).show()
+            .setNegativeButton("انصراف", null)
+            .show()
     }
 
+    // ===================== ویرایش متن (بدون اعداد) =====================
     private fun showEditTextDialog(textEl: CanvasView.TextElement) {
-        val layout = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(16,16,16,16) }
-        val editText = EditText(this).apply { setText(textEl.text); inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE; minLines = 3 }
-        layout.addView(editText)
-        addNumberPicker(layout, editText)
-
-        AlertDialog.Builder(this).setTitle("ویرایش متن").setView(layout)
+        val editText = EditText(this).apply {
+            setText(textEl.text)
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+            minLines = 3
+        }
+        AlertDialog.Builder(this)
+            .setTitle("ویرایش متن")
+            .setView(editText)
             .setPositiveButton("ذخیره") { _, _ ->
                 val newText = editText.text.toString().trim()
                 if (newText.isNotEmpty()) {
-                    pushUndo(); textEl.text = newText; canvasView.invalidate(); addToHistory(newText)
+                    pushUndo()
+                    textEl.text = newText
+                    canvasView.invalidate()
+                    addToHistory(newText)
                 }
             }
-            .setNegativeButton("انصراف", null).show()
+            .setNegativeButton("انصراف", null)
+            .show()
     }
 
+    // ===================== اعداد دایره‌ای (فقط برای افزودن) =====================
     private fun addNumberPicker(parent: LinearLayout, editText: EditText) {
-        val seekBar = SeekBar(this).apply { max = 80; progress = numberButtonSize - 20 }
-        val seekLabel = TextView(this).apply { text = "اندازه اعداد: ${numberButtonSize}dp" }
-        parent.addView(seekLabel); parent.addView(seekBar)
-        val numContainer = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; id = View.generateViewId() }
-        val scroll = HorizontalScrollView(this); scroll.addView(numContainer); parent.addView(scroll)
+        val seekBar = SeekBar(this).apply {
+            max = 80
+            progress = numberButtonSize - 20
+        }
+        val seekLabel = TextView(this).apply {
+            text = "اندازه اعداد: ${numberButtonSize}dp"
+        }
+        parent.addView(seekLabel)
+        parent.addView(seekBar)
+
+        val numContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            id = View.generateViewId()
+        }
+        val scroll = HorizontalScrollView(this)
+        scroll.addView(numContainer)
+        parent.addView(scroll)
 
         fun rebuild() {
             numContainer.removeAllViews()
@@ -285,21 +321,26 @@ class MainActivity : AppCompatActivity() {
                     text = getCircledNumber(i)
                     background = getDrawable(R.drawable.circle_number_bg)
                     gravity = Gravity.CENTER
-                    width = numberButtonSize.dpToPx(); height = numberButtonSize.dpToPx()
+                    width = numberButtonSize.dpToPx()
+                    height = numberButtonSize.dpToPx()
                     textSize = (numberButtonSize * 0.4f)
                     setOnClickListener {
-                        val s = maxOf(editText.selectionStart, 0); val e = maxOf(editText.selectionEnd, 0)
-                        editText.text.replace(s, e, text)
-                        editText.setSelection(s + text.length)
+                        val start = maxOf(editText.selectionStart, 0)
+                        val end = maxOf(editText.selectionEnd, 0)
+                        editText.text.replace(start, end, text)
+                        editText.setSelection(start + text.length)
                     }
                 }
                 numContainer.addView(btn)
             }
         }
         rebuild()
+
         seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(sb: SeekBar?, p: Int, f: Boolean) {
-                numberButtonSize = p + 20; seekLabel.text = "اندازه اعداد: ${numberButtonSize}dp"; rebuild()
+                numberButtonSize = p + 20
+                seekLabel.text = "اندازه اعداد: ${numberButtonSize}dp"
+                rebuild()
             }
             override fun onStartTrackingTouch(sb: SeekBar?) {}
             override fun onStopTrackingTouch(sb: SeekBar?) {}
@@ -307,23 +348,68 @@ class MainActivity : AppCompatActivity() {
     }
 
     // ===================== ابزارهای عمومی =====================
-    private fun pushUndo() { undoStack.add(canvasView.elements.map { it.clone() }); if (undoStack.size > MAX_UNDO) undoStack.removeAt(0) }
-    private fun performUndo() {
-        if (undoStack.size > 1) { undoStack.removeLast(); val prev = undoStack.last(); canvasView.elements.clear(); canvasView.elements.addAll(prev); selectedIndex = -1; canvasView.selectedElementIndex = -1; canvasView.invalidate(); updateUI() }
+    private fun pushUndo() {
+        val snapshot = canvasView.elements.map { it.clone() }
+        undoStack.add(snapshot)
+        if (undoStack.size > MAX_UNDO) undoStack.removeAt(0)
     }
-    private fun rotateSelected(d: Float) { if (selectedIndex==-1) return; val e = canvasView.elements[selectedIndex]; if (e.locked){toast("قفل");return}; pushUndo(); e.rotation = (e.rotation + d).coerceIn(-180f,180f); canvasView.invalidate(); updateUI() }
-    private fun updateSizeDisplay() { tvSize.text = if (selectedIndex!=-1) (canvasView.elements[selectedIndex] as? CanvasView.TextElement)?.size?.toInt()?.toString() ?: "عکس" else "60" }
+
+    private fun performUndo() {
+        if (undoStack.size > 1) {
+            undoStack.removeLast()
+            val prev = undoStack.last()
+            canvasView.elements.clear()
+            canvasView.elements.addAll(prev)
+            selectedIndex = -1
+            canvasView.selectedElementIndex = -1
+            canvasView.invalidate()
+            updateUI()
+        }
+    }
+
+    private fun rotateSelected(d: Float) {
+        if (selectedIndex == -1) return
+        val e = canvasView.elements[selectedIndex]
+        if (e.locked) { toast("قفل"); return }
+        pushUndo()
+        e.rotation = (e.rotation + d).coerceIn(-180f, 180f)
+        canvasView.invalidate()
+        updateUI()
+    }
+
+    private fun updateSizeDisplay() {
+        tvSize.text = if (selectedIndex != -1) {
+            (canvasView.elements[selectedIndex] as? CanvasView.TextElement)?.size?.toInt()?.toString() ?: "عکس"
+        } else "60"
+    }
+
     private fun updateUI() {
-        if (selectedIndex!=-1) {
-            val e = canvasView.elements[selectedIndex]; tvRotation.text = "${e.rotation.toInt()}°"; btnLock.text = if(e.locked) "بازکردن" else "قفل"
-            if (e is CanvasView.TextElement) { tvSize.text = e.size.toInt().toString(); btnStyle.text = if(e.underline) "زیرخط ✓" else "زیرخط" }
-            else { tvSize.text = "عکس"; btnStyle.text = "زیرخط" }
-        } else { tvSize.text="60"; tvRotation.text="0°"; btnLock.text="قفل"; btnStyle.text="زیرخط" }
+        if (selectedIndex != -1) {
+            val e = canvasView.elements[selectedIndex]
+            tvRotation.text = "${e.rotation.toInt()}°"
+            btnLock.text = if (e.locked) "بازکردن" else "قفل"
+            if (e is CanvasView.TextElement) {
+                tvSize.text = e.size.toInt().toString()
+                btnStyle.text = if (e.underline) "زیرخط ✓" else "زیرخط"
+            } else {
+                tvSize.text = "عکس"
+                btnStyle.text = "زیرخط"
+            }
+        } else {
+            tvSize.text = "60"
+            tvRotation.text = "0°"
+            btnLock.text = "قفل"
+            btnStyle.text = "زیرخط"
+        }
     }
 
     // ===================== فونت / رنگ / برچسب / ذخیره =====================
     private fun showFontPicker() {
-        if (fontNames.isEmpty()) { toast("ابتدا فونت اضافه کنید"); openFontLauncher.launch(arrayOf("font/ttf","application/x-font-ttf","*/*")); return }
+        if (fontNames.isEmpty()) {
+            toast("ابتدا فونت اضافه کنید")
+            openFontLauncher.launch(arrayOf("font/ttf", "application/x-font-ttf", "*/*"))
+            return
+        }
         val adapter = object : ArrayAdapter<String>(this, 0, fontNames.toList()) {
             override fun getView(pos: Int, cv: View?, parent: ViewGroup): View {
                 val v = cv ?: layoutInflater.inflate(R.layout.item_font_preview, parent, false)
@@ -334,30 +420,68 @@ class MainActivity : AppCompatActivity() {
             }
         }
         AlertDialog.Builder(this).setTitle("انتخاب فونت").setAdapter(adapter) { _, w ->
-            val name = fontNames[w]; fontMap[name]?.let { tf ->
-                val el = canvasView.elements[selectedIndex] as CanvasView.TextElement; pushUndo(); el.typeface = tf; el.fontName = name; canvasView.invalidate(); toast("فونت $name اعمال شد")
+            val name = fontNames[w]
+            fontMap[name]?.let { tf ->
+                val el = canvasView.elements[selectedIndex] as CanvasView.TextElement
+                pushUndo()
+                el.typeface = tf
+                el.fontName = name
+                canvasView.invalidate()
+                toast("فونت $name اعمال شد")
             }
-        }.setNeutralButton("بارگذاری جدید") { _, _ -> openFontLauncher.launch(arrayOf("font/ttf","application/x-font-ttf","*/*")) }.show()
+        }.setNeutralButton("بارگذاری جدید") { _, _ ->
+            openFontLauncher.launch(arrayOf("font/ttf", "application/x-font-ttf", "*/*"))
+        }.show()
     }
 
     private fun showColorPicker(forImage: Boolean) {
-        val colors = arrayOf<Pair<Int?,String>>(0xFF000000.toInt() to "سیاه", 0xFFFFFFFF.toInt() to "سفید", 0xFFFF0000.toInt() to "قرمز", 0xFF0000FF.toInt() to "آبی", 0xFF008000.toInt() to "سبز", 0xFFFFA500.toInt() to "نارنجی", 0xFF800080.toInt() to "بنفش", 0xFFFFD700.toInt() to "طلایی", 0xFF00FFFF.toInt() to "فیروزه‌ای", 0xFFFF69B4.toInt() to "صورتی", 0xFFA52A2A.toInt() to "قهوه‌ای", 0xFF808080.toInt() to "خاکستری")
-        val grid = android.widget.GridLayout(this).apply { columnCount = 4; rowCount = 3; useDefaultMargins = true }
+        val colors = arrayOf<Pair<Int?, String>>(
+            0xFF000000.toInt() to "سیاه", 0xFFFFFFFF.toInt() to "سفید",
+            0xFFFF0000.toInt() to "قرمز", 0xFF0000FF.toInt() to "آبی",
+            0xFF008000.toInt() to "سبز", 0xFFFFA500.toInt() to "نارنجی",
+            0xFF800080.toInt() to "بنفش", 0xFFFFD700.toInt() to "طلایی",
+            0xFF00FFFF.toInt() to "فیروزه‌ای", 0xFFFF69B4.toInt() to "صورتی",
+            0xFFA52A2A.toInt() to "قهوه‌ای", 0xFF808080.toInt() to "خاکستری"
+        )
+        val grid = android.widget.GridLayout(this).apply {
+            columnCount = 4; rowCount = 3; useDefaultMargins = true
+        }
         val el = canvasView.elements[selectedIndex]
-        val list = colors.toMutableList(); if (forImage) list.add(null to "بدون رنگ")
+        val list = colors.toMutableList()
+        if (forImage) list.add(null to "بدون رنگ")
+
         for ((color, _) in list) {
-            val v = View(this).apply { setBackgroundColor(color ?: Color.TRANSPARENT); layoutParams = ViewGroup.LayoutParams(80,80)
+            val v = View(this).apply {
+                setBackgroundColor(color ?: Color.TRANSPARENT)
+                layoutParams = ViewGroup.LayoutParams(80, 80)
                 setOnClickListener {
                     when {
-                        color == null && el is CanvasView.ImageElement -> { pushUndo(); (el as CanvasView.ImageElement).tintColor = null; canvasView.invalidate() }
-                        el is CanvasView.TextElement && color != null -> { pushUndo(); (el as CanvasView.TextElement).color = color; canvasView.invalidate() }
-                        el is CanvasView.ImageElement && color != null -> { pushUndo(); (el as CanvasView.ImageElement).tintColor = color; canvasView.invalidate() }
+                        color == null && el is CanvasView.ImageElement -> {
+                            pushUndo()
+                            (el as CanvasView.ImageElement).tintColor = null
+                            canvasView.invalidate()
+                        }
+                        el is CanvasView.TextElement && color != null -> {
+                            pushUndo()
+                            (el as CanvasView.TextElement).color = color
+                            canvasView.invalidate()
+                        }
+                        el is CanvasView.ImageElement && color != null -> {
+                            pushUndo()
+                            (el as CanvasView.ImageElement).tintColor = color
+                            canvasView.invalidate()
+                        }
                     }
                     (parent?.parent?.parent as? AlertDialog)?.dismiss()
                 }
-            }; grid.addView(v)
+            }
+            grid.addView(v)
         }
-        AlertDialog.Builder(this).setTitle(if(forImage) "تینت عکس" else "رنگ متن").setView(grid).setNegativeButton("انصراف",null).show()
+        AlertDialog.Builder(this)
+            .setTitle(if (forImage) "تینت عکس" else "رنگ متن")
+            .setView(grid)
+            .setNegativeButton("انصراف", null)
+            .show()
     }
 
     private fun addSticker(uri: Uri) {
@@ -394,7 +518,10 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) { toast("خطا در بارگذاری فونت") }
     }
 
-    private fun saveFontList() { getSharedPreferences("fonts", 0).edit().putStringSet("names", fontNames.toSet()).apply() }
+    private fun saveFontList() {
+        getSharedPreferences("fonts", 0).edit().putStringSet("names", fontNames.toSet()).apply()
+    }
+
     private fun loadStoredFonts() {
         val names = getSharedPreferences("fonts", 0).getStringSet("names", emptySet()) ?: emptySet()
         fontNames.addAll(names)
@@ -434,6 +561,7 @@ class MainActivity : AppCompatActivity() {
         n in 36..50 -> String(Character.toChars(0x32B1 + n - 36))
         else -> "($n)"
     }
+
     private fun Int.dpToPx() = (this * resources.displayMetrics.density).toInt()
     private fun toast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
 }
