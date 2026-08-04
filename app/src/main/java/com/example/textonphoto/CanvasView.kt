@@ -40,38 +40,41 @@ class CanvasView @JvmOverloads constructor(
         override var visible: Boolean = true
     ) : CanvasElement {
 
-        // حالا public است
         val lines: List<String>
             get() = text.split("\n")
 
         override fun draw(canvas: Canvas, scaleX: Float, scaleY: Float, offsetX: Float, offsetY: Float) {
-    if (!visible) return
-    val px = x * scaleX + offsetX
-    val py = y * scaleY + offsetY
-    val w = width * scaleX
-    val h = height * scaleY
+            if (!visible) return
 
-    canvas.save()
-    canvas.rotate(rotation, px, py)
-    val destRect = RectF(px - w / 2, py - h / 2, px + w / 2, py + h / 2)
+            val lineHeight = size * scaleX * 1.2f
+            val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                typeface = this@TextElement.typeface
+                textSize = this@TextElement.size * scaleX
+                color = this@TextElement.color
+            }
+            val px = x * scaleX + offsetX
+            val py = y * scaleY + offsetY
 
-    if (tintColor != null) {
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            colorFilter = PorterDuffColorFilter(tintColor!!, PorterDuff.Mode.SRC_ATOP)
-        }
-        canvas.drawBitmap(bitmap, null, destRect, paint)   // <-- اصلاح شد
-    } else {
-        canvas.drawBitmap(bitmap, null, destRect, null)
-    }
-    canvas.restore()
+            canvas.save()
+            canvas.rotate(rotation, px, py)
 
-    if (locked) {
-        val lockPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.RED; style = Paint.Style.FILL
-        }
-        canvas.drawRect(px - 10f, py - h / 2 - 15f, px + 10f, py - h / 2 + 5f, lockPaint)
-    }
-}
+            for ((i, line) in lines.withIndex()) {
+                val lineY = py + i * lineHeight
+                canvas.drawText(line, px, lineY, textPaint)
+
+                if (underline) {
+                    val rect = Rect()
+                    textPaint.getTextBounds(line, 0, line.length, rect)
+                    val underlinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                        color = this@TextElement.color
+                        strokeWidth = 4f * scaleX
+                        style = Paint.Style.STROKE
+                    }
+                    val lineUnderY = lineY + rect.height() * 0.35f
+                    canvas.drawLine(px, lineUnderY, px + rect.width(), lineUnderY, underlinePaint)
+                }
+            }
+
             canvas.restore()
 
             if (locked) {
@@ -142,27 +145,36 @@ class CanvasView @JvmOverloads constructor(
         var tintColor: Int? = null,
         override var visible: Boolean = true
     ) : CanvasElement {
+
         override fun draw(canvas: Canvas, scaleX: Float, scaleY: Float, offsetX: Float, offsetY: Float) {
             if (!visible) return
             val px = x * scaleX + offsetX
             val py = y * scaleY + offsetY
             val w = width * scaleX
             val h = height * scaleY
+
             canvas.save()
             canvas.rotate(rotation, px, py)
-            val dest = RectF(px - w/2, py - h/2, px + w/2, py + h/2)
+            val destRect = RectF(px - w / 2, py - h / 2, px + w / 2, py + h / 2)
+
             if (tintColor != null) {
-                Paint().apply { colorFilter = PorterDuffColorFilter(tintColor!!, PorterDuff.Mode.SRC_ATOP) }
-                canvas.drawBitmap(bitmap, null, dest, null)
+                val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    colorFilter = PorterDuffColorFilter(tintColor!!, PorterDuff.Mode.SRC_ATOP)
+                }
+                canvas.drawBitmap(bitmap, null, destRect, paint)   // ✅ تینت اعمال می‌شود
             } else {
-                canvas.drawBitmap(bitmap, null, dest, null)
+                canvas.drawBitmap(bitmap, null, destRect, null)
             }
             canvas.restore()
+
             if (locked) {
-                val lp = Paint().apply { color = Color.RED; style = Paint.Style.FILL }
-                canvas.drawRect(px - 10f, py - h/2 - 15f, px + 10f, py - h/2 + 5f, lp)
+                val lockPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = Color.RED; style = Paint.Style.FILL
+                }
+                canvas.drawRect(px - 10f, py - h / 2 - 15f, px + 10f, py - h / 2 + 5f, lockPaint)
             }
         }
+
         override fun hitTest(touchX: Float, touchY: Float, scaleX: Float, scaleY: Float, offsetX: Float, offsetY: Float): Boolean {
             if (!visible) return false
             val px = x * scaleX + offsetX
@@ -174,10 +186,14 @@ class CanvasView @JvmOverloads constructor(
             val dy = touchY - py
             val rx = (dx * cos(a) - dy * sin(a)).toFloat() + px
             val ry = (dx * sin(a) + dy * cos(a)).toFloat() + py
-            return rx in (px - w/2)..(px + w/2) && ry in (py - h/2)..(py + h/2)
+            return rx in (px - w / 2)..(px + w / 2) && ry in (py - h / 2)..(py + h / 2)
         }
+
         override fun clone() = copy(bitmap = bitmap)
-        override fun resize(factor: Float) { width = (width * factor).coerceIn(20f, 1000f); height = (height * factor).coerceIn(20f, 1000f) }
+        override fun resize(factor: Float) {
+            width = (width * factor).coerceIn(20f, 1000f)
+            height = (height * factor).coerceIn(20f, 1000f)
+        }
         override fun scaleFrom(fromW: Float, fromH: Float, toW: Float, toH: Float) {
             x = x * (toW / fromW)
             y = y * (toH / fromH)
@@ -287,7 +303,7 @@ class CanvasView @JvmOverloads constructor(
             if (box != null) {
                 val hp = Paint().apply {
                     color = Color.parseColor("#FF6200EE"); style = Paint.Style.STROKE
-                    strokeWidth = 2f; pathEffect = DashPathEffect(floatArrayOf(10f,5f), 0f)
+                    strokeWidth = 2f; pathEffect = DashPathEffect(floatArrayOf(10f, 5f), 0f)
                 }
                 canvas.drawRect(box, hp)
             }
@@ -332,7 +348,7 @@ class CanvasView @JvmOverloads constructor(
             is ImageElement -> {
                 val px = el.x * scaleX + offsetX; val py = el.y * scaleY + offsetY
                 val w = el.width * scaleX; val h = el.height * scaleY
-                val left = px - w/2; val top = py - h/2; val right = px + w/2; val bottom = py + h/2
+                val left = px - w / 2; val top = py - h / 2; val right = px + w / 2; val bottom = py + h / 2
                 val a = Math.toRadians(el.rotation.toDouble())
                 val corners = arrayOf(
                     floatArrayOf(left, top), floatArrayOf(right, top),
