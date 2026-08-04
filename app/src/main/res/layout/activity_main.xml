@@ -5,7 +5,6 @@
     android:layout_height="match_parent"
     android:background="#EEEEEE">
 
-    <!-- بوم + دکمه تاریخچه -->
     <FrameLayout
         android:id="@+id/canvasContainer"
         android:layout_width="0dp"
@@ -23,19 +22,9 @@
             android:layout_height="match_parent"
             android:background="@android:color/white" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnHistory"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="تاریخچه"
-            android:textSize="14sp"
-            android:layout_gravity="top|end"
-            android:layout_margin="8dp"
-            app:cornerRadius="16dp" />
     </FrameLayout>
 
-    <!-- پنل دکمه‌ها -->
+    <!-- نوار ابزار پایین -->
     <LinearLayout
         android:id="@+id/buttonPanel"
         android:layout_width="match_parent"
@@ -119,8 +108,7 @@
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="44dp" android:layout_height="44dp"
                 android:text="↺" android:textSize="18sp"
-                android:layout_marginEnd="2dp"
-                app:cornerRadius="22dp" />
+                android:layout_marginEnd="2dp" app:cornerRadius="22dp" />
 
             <TextView
                 android:id="@+id/tvRotation"
@@ -133,8 +121,7 @@
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="44dp" android:layout_height="44dp"
                 android:text="↻" android:textSize="18sp"
-                android:layout_marginStart="2dp"
-                app:cornerRadius="22dp" />
+                android:layout_marginStart="2dp" app:cornerRadius="22dp" />
 
             <View android:layout_width="8dp" android:layout_height="0dp" />
 
@@ -143,8 +130,7 @@
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="44dp" android:layout_height="44dp"
                 android:text="−" android:textSize="18sp"
-                android:layout_marginEnd="2dp"
-                app:cornerRadius="22dp" />
+                android:layout_marginEnd="2dp" app:cornerRadius="22dp" />
 
             <TextView
                 android:id="@+id/tvSize"
@@ -157,11 +143,10 @@
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="44dp" android:layout_height="44dp"
                 android:text="+" android:textSize="18sp"
-                android:layout_marginStart="2dp"
-                app:cornerRadius="22dp" />
+                android:layout_marginStart="2dp" app:cornerRadius="22dp" />
         </LinearLayout>
 
-        <!-- ردیف ۴ -->
+        <!-- ردیف ۴: برچسب، قفل، برگشت، ذخیره -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -191,6 +176,38 @@
                 style="@style/Widget.MaterialComponents.Button"
                 android:layout_width="0dp" android:layout_height="44dp" android:layout_weight="1"
                 android:text="ذخیره" android:textSize="13sp" android:layout_marginHorizontal="1dp" />
+        </LinearLayout>
+
+        <!-- ردیف ۵: تاریخچه، PDF، بوم، لایه‌ها -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:paddingTop="2dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnHistory"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp" android:layout_height="44dp" android:layout_weight="1"
+                android:text="تاریخچه" android:textSize="12sp" android:layout_marginHorizontal="1dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPdf"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp" android:layout_height="44dp" android:layout_weight="1"
+                android:text="PDF" android:textSize="12sp" android:layout_marginHorizontal="1dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCanvasSize"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp" android:layout_height="44dp" android:layout_weight="1"
+                android:text="بوم" android:textSize="12sp" android:layout_marginHorizontal="1dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnLayers"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp" android:layout_height="44dp" android:layout_weight="1"
+                android:text="لایه‌ها" android:textSize="12sp" android:layout_marginHorizontal="1dp" />
         </LinearLayout>
     </LinearLayout>
 
