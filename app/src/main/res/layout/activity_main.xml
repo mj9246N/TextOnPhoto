@@ -24,7 +24,7 @@
 
     </FrameLayout>
 
-    <!-- نوار ابزار پایین -->
+    <!-- پنل دکمه‌ها -->
     <LinearLayout
         android:id="@+id/buttonPanel"
         android:layout_width="match_parent"
@@ -38,7 +38,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- ردیف ۱ -->
+        <!-- ردیف ۱: افزودن، ویرایش، کپی، حذف -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -70,7 +70,7 @@
                 android:text="حذف" android:textSize="13sp" android:layout_marginHorizontal="1dp" />
         </LinearLayout>
 
-        <!-- ردیف ۲ -->
+        <!-- ردیف ۲: فونت، رنگ، استایل -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -178,7 +178,7 @@
                 android:text="ذخیره" android:textSize="13sp" android:layout_marginHorizontal="1dp" />
         </LinearLayout>
 
-        <!-- ردیف ۵: تاریخچه، PDF، بوم، لایه‌ها -->
+        <!-- ردیف ۵: تاریخچه و اندازه بوم -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -192,22 +192,10 @@
                 android:text="تاریخچه" android:textSize="12sp" android:layout_marginHorizontal="1dp" />
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnPdf"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="0dp" android:layout_height="44dp" android:layout_weight="1"
-                android:text="PDF" android:textSize="12sp" android:layout_marginHorizontal="1dp" />
-
-            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnCanvasSize"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="0dp" android:layout_height="44dp" android:layout_weight="1"
                 android:text="بوم" android:textSize="12sp" android:layout_marginHorizontal="1dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnLayers"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="0dp" android:layout_height="44dp" android:layout_weight="1"
-                android:text="لایه‌ها" android:textSize="12sp" android:layout_marginHorizontal="1dp" />
         </LinearLayout>
     </LinearLayout>
 
