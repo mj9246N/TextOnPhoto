@@ -28,7 +28,7 @@ class MainActivity : AppCompatActivity() {
     private val undoStack = mutableListOf<List<CanvasView.CanvasElement>>()
     private val MAX_UNDO = 100
 
-    // تاریخچه پایدار (ذخیره در فایل)
+    // تاریخچهٔ پایدار
     private val historyFile by lazy { File(filesDir, "history.txt") }
     private val historyTexts = mutableListOf<String>()
 
@@ -48,7 +48,6 @@ class MainActivity : AppCompatActivity() {
         btnLock = findViewById(R.id.btnLock)
         btnStyle = findViewById(R.id.btnStyle)
 
-        // بارگذاری فونت پیش‌فرض
         try {
             defaultTypeface = Typeface.createFromAsset(assets, "fonts/default.ttf")
             Toast.makeText(this, "فونت پیش‌فرض با موفقیت بارگذاری شد", Toast.LENGTH_SHORT).show()
@@ -57,9 +56,7 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "فونت پیش‌فرض یافت نشد! مسیر: assets/fonts/default.ttf", Toast.LENGTH_LONG).show()
         }
 
-        // بارگذاری تاریخچه از فایل
         loadHistory()
-
         pushUndo()
 
         canvasView.onElementSelected = { idx ->
@@ -159,7 +156,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnHistory).setOnClickListener { showHistoryDialog() }
     }
 
-    // ===================== تاریخچه (پایدار با فایل) =====================
+    // ===================== تاریخچه (با دکمه‌های تکی و حذف همه) =====================
     private fun loadHistory() {
         if (historyFile.exists()) {
             historyTexts.clear()
@@ -180,64 +177,99 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showHistoryDialog() {
-        val builder = AlertDialog.Builder(this, android.R.style.Theme_Material_Light_Dialog_Alert)
-        builder.setTitle("تاریخچه متون")
-
-        if (historyTexts.isEmpty()) {
-            builder.setMessage("تاریخچه خالی است")
-            builder.setPositiveButton("بستن", null)
-            builder.show()
-            return
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(8, 8, 8, 8)
+            setBackgroundColor(Color.WHITE)
         }
 
-        // آداپتور لیست
-        val listAdapter = object : ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, historyTexts.toList()) {
-            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-                val view = convertView ?: layoutInflater.inflate(android.R.layout.simple_list_item_1, parent, false)
-                val textView = view.findViewById<TextView>(android.R.id.text1)
-                textView.text = getItem(position)
-                textView.setTextColor(Color.BLACK)
-                textView.textSize = 16f
-                return view
+        if (historyTexts.isEmpty()) {
+            container.addView(TextView(this).apply {
+                text = "تاریخچه خالی است"
+                setTextColor(Color.BLACK)
+                textSize = 16f
+            })
+        } else {
+            // یک ردیف برای هر متن
+            for (i in historyTexts.indices) {
+                val text = historyTexts[i]   // این val هیچ‌وقت reassign نمی‌شود
+
+                val row = LinearLayout(this).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).apply { setMargins(0, 4, 0, 4) }
+                    gravity = Gravity.CENTER_VERTICAL
+                }
+
+                val tv = TextView(this).apply {
+                    text = text
+                    layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                    textSize = 16f
+                    maxLines = 2
+                    setTextColor(Color.BLACK)
+                }
+
+                val copyBtn = ImageButton(this).apply {
+                    setImageResource(android.R.drawable.ic_menu_edit)
+                    setOnClickListener {
+                        (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
+                            .setPrimaryClip(ClipData.newPlainText("text", text))
+                        toast("کپی شد")
+                    }
+                }
+
+                val delBtn = ImageButton(this).apply {
+                    setImageResource(android.R.drawable.ic_menu_delete)
+                    setOnClickListener {
+                        historyTexts.removeAt(i)
+                        saveHistory()
+                        container.removeView(row)
+                        if (historyTexts.isEmpty()) {
+                            container.removeAllViews()
+                            container.addView(TextView(context).apply {
+                                text = "تاریخچه خالی است"
+                                setTextColor(Color.BLACK)
+                                textSize = 16f
+                            })
+                        }
+                        toast("حذف شد")
+                    }
+                }
+
+                row.addView(tv)
+                row.addView(copyBtn)
+                row.addView(delBtn)
+                container.addView(row)
             }
         }
 
-        builder.setAdapter(listAdapter) { dialog, which ->
-            val selectedText = historyTexts[which]
-            AlertDialog.Builder(this@MainActivity, android.R.style.Theme_Material_Light_Dialog_Alert)
-                .setTitle(selectedText)
-                .setItems(arrayOf("کپی", "حذف")) { _, opt ->
-                    when (opt) {
-                        0 -> {
-                            (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
-                                .setPrimaryClip(ClipData.newPlainText("text", selectedText))
-                            toast("کپی شد")
-                        }
-                        1 -> {
-                            historyTexts.removeAt(which)
-                            saveHistory()
-                            listAdapter.notifyDataSetChanged()
-                            if (historyTexts.isEmpty()) {
-                                dialog.dismiss()
-                                showHistoryDialog()
-                            }
-                            toast("حذف شد")
-                        }
-                    }
-                }
-                .setPositiveButton("بستن", null)
-                .show()
+        // دکمه حذف همه
+        val deleteAllBtn = Button(this).apply {
+            text = "حذف همه"
+            setOnClickListener {
+                historyTexts.clear()
+                saveHistory()
+                container.removeAllViews()
+                container.addView(TextView(context).apply {
+                    text = "تاریخچه خالی است"
+                    setTextColor(Color.BLACK)
+                    textSize = 16f
+                })
+                toast("همه حذف شدند")
+            }
         }
+        container.addView(deleteAllBtn)
 
-        builder.setPositiveButton("بستن") { dialog, _ -> dialog.dismiss() }
-        builder.setNeutralButton("حذف همه") { _, _ ->
-            historyTexts.clear()
-            saveHistory()
-            showHistoryDialog()
-            toast("همه حذف شدند")
-        }
+        val scrollView = ScrollView(this)
+        scrollView.addView(container)
 
-        builder.show()
+        AlertDialog.Builder(this, android.R.style.Theme_Material_Light_Dialog_Alert)
+            .setTitle("تاریخچه متون")
+            .setView(scrollView)
+            .setPositiveButton("بستن", null)
+            .show()
     }
 
     // ===================== افزودن/ویرایش متن =====================
@@ -286,7 +318,7 @@ class MainActivity : AppCompatActivity() {
                     selectedIndex = canvasView.elements.size - 1
                     canvasView.selectedElementIndex = selectedIndex
                     canvasView.invalidate(); updateUI()
-                    addToHistory(text)   // ذخیره در تاریخچه پایدار
+                    addToHistory(text)
                 }
             }
             .setNegativeButton("انصراف", null)
@@ -305,8 +337,7 @@ class MainActivity : AppCompatActivity() {
             .setPositiveButton("ذخیره") { _, _ ->
                 val newText = editText.text.toString().trim()
                 if (newText.isNotEmpty()) {
-                    pushUndo(); textEl.text = newText; canvasView.invalidate()
-                    addToHistory(newText)   // ذخیره در تاریخچه
+                    pushUndo(); textEl.text = newText; canvasView.invalidate(); addToHistory(newText)
                 }
             }
             .setNegativeButton("انصراف", null)
