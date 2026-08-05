@@ -61,7 +61,8 @@ class CanvasView @JvmOverloads constructor(
             }
         }
 
-        private fun parseLine(line: String): List<TextSegment> {
+        // تغییر از private به internal
+        internal fun parseLine(line: String): List<TextSegment> {
             val segments = mutableListOf<TextSegment>()
             var i = 0
             val sb = StringBuilder()
@@ -120,10 +121,10 @@ class CanvasView @JvmOverloads constructor(
                 val segments = parseLine(line)
                 if (segments.isEmpty()) continue
 
-                // تشخیص جهت
                 val firstSegText = segments.first().text
                 val rtl = isRtl(firstSegText)
 
+                // بازسازی ترتیب بر اساس جهت
                 val visualOrder = if (rtl) segments.reversed() else segments.toList()
 
                 // محاسبه عرض کل
@@ -132,26 +133,21 @@ class CanvasView @JvmOverloads constructor(
                     totalWidth += textPaint.measureText(seg.text)
                 }
 
-                val startX = when (alignment) {
-                    TextAlignment.LEFT -> anchorX
-                    TextAlignment.CENTER -> anchorX - totalWidth / 2f
-                    TextAlignment.RIGHT -> anchorX - totalWidth
-                }
+                val startX = getDrawStartX(totalWidth, anchorX)
 
                 var currentX = startX
                 if (rtl) {
-                    currentX = anchorX  // right edge
+                    // برای متن‌های راست‌به‌چپ: از سمت راست (anchorX) شروع می‌کنیم
+                    currentX = anchorX
                     for (seg in visualOrder) {
                         val segWidth = textPaint.measureText(seg.text)
                         val left = currentX - segWidth
-                        val segPaint = Paint(textPaint).apply {
-                            textDirection = Paint.TEXT_DIRECTION_RTL
-                        }
-                        canvas.drawText(seg.text, left, anchorY + lineIdx * lineHeight, segPaint)
+                        // رسم متن – بدون textDirection
+                        canvas.drawText(seg.text, left, anchorY + lineIdx * lineHeight, textPaint)
 
                         // رسم خطوط
                         val rect = Rect()
-                        segPaint.getTextBounds(seg.text, 0, seg.text.length, rect)
+                        textPaint.getTextBounds(seg.text, 0, seg.text.length, rect)
                         if (seg.underline || underline) {
                             val linePaint = Paint().apply {
                                 color = this@TextElement.color
@@ -173,6 +169,7 @@ class CanvasView @JvmOverloads constructor(
                         currentX = left
                     }
                 } else {
+                    // متن‌های چپ‌به‌راست (انگلیسی)
                     for (seg in visualOrder) {
                         val segWidth = textPaint.measureText(seg.text)
                         val left = currentX
@@ -350,7 +347,6 @@ class CanvasView @JvmOverloads constructor(
     private var lastTouchX = 0f
     private var lastTouchY = 0f
 
-    // پینچ برای تغییر اندازه
     private var scaleGestureDetector = ScaleGestureDetector(context, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
         override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
             return selectedElementIndex != -1 && !elements[selectedElementIndex].locked
@@ -458,6 +454,7 @@ class CanvasView @JvmOverloads constructor(
         }
     }
 
+    // اکنون parseLine به internal تغییر یافته و اینجا به راحتی قابل استفاده است
     private fun getBoundingBox(el: CanvasElement): RectF? {
         return when (el) {
             is TextElement -> {
@@ -470,7 +467,7 @@ class CanvasView @JvmOverloads constructor(
                 var maxX = Float.MIN_VALUE; var maxY = Float.MIN_VALUE
 
                 for ((i, line) in el.lines.withIndex()) {
-                    val segments = el.parseLine(line)
+                    val segments = el.parseLine(line)   // حالا در دسترس است
                     var totalWidth = 0f
                     for (seg in segments) totalWidth += paint.measureText(seg.text)
                     val startX = el.getDrawStartX(totalWidth, anchorX)
