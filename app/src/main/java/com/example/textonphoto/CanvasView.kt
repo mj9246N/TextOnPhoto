@@ -46,7 +46,8 @@ class CanvasView @JvmOverloads constructor(
         val lines: List<String>
             get() = text.split("\n")
 
-        private fun getDrawStartX(textWidth: Float, anchorX: Float): Float {
+        // تغییر از private به internal تا در getBoundingBox قابل دسترسی باشد
+        internal fun getDrawStartX(textWidth: Float, anchorX: Float): Float {
             return when (alignment) {
                 TextAlignment.LEFT -> anchorX
                 TextAlignment.CENTER -> anchorX - textWidth / 2f
@@ -74,7 +75,7 @@ class CanvasView @JvmOverloads constructor(
                 var currentX = getDrawStartX(lineWidth, anchorX)
                 val lineY = anchorY + i * lineHeight
 
-                // پردازش markup برای خط فعلی (۷...۷)
+                // پردازش markup برای ۷...۷
                 val parts = line.split("۷")
                 for (j in parts.indices) {
                     val part = parts[j]
@@ -82,14 +83,12 @@ class CanvasView @JvmOverloads constructor(
                     val partWidth = textPaint.measureText(part)
                     canvas.drawText(part, currentX, lineY, textPaint)
 
-                    // اگر این بخش داخل علامت‌های ۷ بوده (ایندکس فرد)، خط زیر بکش
                     if (j % 2 == 1) {
                         val underlinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                             color = textPaint.color
                             strokeWidth = 4f * scaleX
                             style = Paint.Style.STROKE
                         }
-                        // محاسبه مکان خط زیر: به‌اندازه ۳۵٪ ارتفاع متن زیر خط بیس‌لاین
                         val rect = Rect()
                         textPaint.getTextBounds(part, 0, part.length, rect)
                         val lineUnderY = lineY + rect.height() * 0.35f
@@ -99,7 +98,6 @@ class CanvasView @JvmOverloads constructor(
                     currentX += partWidth
                 }
 
-                // اگر گزینهٔ global underline فعال بود، برای تمام خط یک خط دیگر بکشیم (اختیاری)
                 if (underline) {
                     val rect = Rect()
                     textPaint.getTextBounds(line, 0, line.length, rect)
@@ -365,7 +363,7 @@ class CanvasView @JvmOverloads constructor(
 
                 for ((i, line) in el.lines.withIndex()) {
                     val lineWidth = paint.measureText(line)
-                    val startX = el.getDrawStartX(lineWidth, anchorX)
+                    val startX = el.getDrawStartX(lineWidth, anchorX)  // حالا internal است و قابل دسترسی
                     val rect = Rect()
                     paint.getTextBounds(line, 0, line.length, rect)
                     val left = startX
