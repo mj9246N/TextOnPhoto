@@ -12,6 +12,8 @@ class CanvasView @JvmOverloads constructor(
     attrs: AttributeSet? = null
 ) : View(context, attrs) {
 
+    enum class TextAlignment { LEFT, CENTER, RIGHT }
+
     interface CanvasElement {
         var x: Float
         var y: Float
@@ -37,11 +39,20 @@ class CanvasView @JvmOverloads constructor(
         override var locked: Boolean = false,
         override var rotation: Float = 0f,
         var underline: Boolean = false,
-        override var visible: Boolean = true
+        override var visible: Boolean = true,
+        var alignment: TextAlignment = TextAlignment.RIGHT
     ) : CanvasElement {
 
         val lines: List<String>
             get() = text.split("\n")
+
+        private fun getDrawStartX(textWidth: Float, anchorX: Float): Float {
+            return when (alignment) {
+                TextAlignment.LEFT -> anchorX
+                TextAlignment.CENTER -> anchorX - textWidth / 2f
+                TextAlignment.RIGHT -> anchorX - textWidth
+            }
+        }
 
         override fun draw(canvas: Canvas, scaleX: Float, scaleY: Float, offsetX: Float, offsetY: Float) {
             if (!visible) return
@@ -52,16 +63,43 @@ class CanvasView @JvmOverloads constructor(
                 textSize = this@TextElement.size * scaleX
                 color = this@TextElement.color
             }
-            val px = x * scaleX + offsetX
-            val py = y * scaleY + offsetY
+            val anchorX = x * scaleX + offsetX
+            val anchorY = y * scaleY + offsetY
 
             canvas.save()
-            canvas.rotate(rotation, px, py)
+            canvas.rotate(rotation, anchorX, anchorY)
 
             for ((i, line) in lines.withIndex()) {
-                val lineY = py + i * lineHeight
-                canvas.drawText(line, px, lineY, textPaint)
+                val lineWidth = textPaint.measureText(line)
+                var currentX = getDrawStartX(lineWidth, anchorX)
+                val lineY = anchorY + i * lineHeight
 
+                // پردازش markup برای خط فعلی (۷...۷)
+                val parts = line.split("۷")
+                for (j in parts.indices) {
+                    val part = parts[j]
+                    if (part.isEmpty()) continue
+                    val partWidth = textPaint.measureText(part)
+                    canvas.drawText(part, currentX, lineY, textPaint)
+
+                    // اگر این بخش داخل علامت‌های ۷ بوده (ایندکس فرد)، خط زیر بکش
+                    if (j % 2 == 1) {
+                        val underlinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                            color = textPaint.color
+                            strokeWidth = 4f * scaleX
+                            style = Paint.Style.STROKE
+                        }
+                        // محاسبه مکان خط زیر: به‌اندازه ۳۵٪ ارتفاع متن زیر خط بیس‌لاین
+                        val rect = Rect()
+                        textPaint.getTextBounds(part, 0, part.length, rect)
+                        val lineUnderY = lineY + rect.height() * 0.35f
+                        canvas.drawLine(currentX, lineUnderY, currentX + partWidth, lineUnderY, underlinePaint)
+                    }
+
+                    currentX += partWidth
+                }
+
+                // اگر گزینهٔ global underline فعال بود، برای تمام خط یک خط دیگر بکشیم (اختیاری)
                 if (underline) {
                     val rect = Rect()
                     textPaint.getTextBounds(line, 0, line.length, rect)
@@ -71,7 +109,8 @@ class CanvasView @JvmOverloads constructor(
                         style = Paint.Style.STROKE
                     }
                     val lineUnderY = lineY + rect.height() * 0.35f
-                    canvas.drawLine(px, lineUnderY, px + rect.width(), lineUnderY, underlinePaint)
+                    val startX = getDrawStartX(lineWidth, anchorX)
+                    canvas.drawLine(startX, lineUnderY, startX + lineWidth, lineUnderY, underlinePaint)
                 }
             }
 
@@ -79,9 +118,10 @@ class CanvasView @JvmOverloads constructor(
 
             if (locked) {
                 val lockPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.RED; style = Paint.Style.FILL }
-                val totalHeight = lines.size * lineHeight
-                val top = py - textPaint.textSize * 0.2f
-                canvas.drawRect(px - 10f, top - 10f, px + 10f, top, lockPaint)
+                val firstLineWidth = textPaint.measureText(lines.firstOrNull() ?: "")
+                val firstStartX = getDrawStartX(firstLineWidth, anchorX)
+                val top = anchorY - textPaint.textSize * 0.2f
+                canvas.drawRect(firstStartX - 10f, top - 10f, firstStartX + 10f, top, lockPaint)
             }
         }
 
@@ -90,8 +130,8 @@ class CanvasView @JvmOverloads constructor(
 
             val lineHeight = size * scaleX * 1.2f
             val textPaint = Paint().apply { typeface = this@TextElement.typeface; textSize = this@TextElement.size * scaleX }
-            val px = x * scaleX + offsetX
-            val py = y * scaleY + offsetY
+            val anchorX = x * scaleX + offsetX
+            val anchorY = y * scaleY + offsetY
 
             var overallLeft = Float.MAX_VALUE
             var overallRight = Float.MIN_VALUE
@@ -99,12 +139,14 @@ class CanvasView @JvmOverloads constructor(
             var overallBottom = Float.MIN_VALUE
 
             for ((i, line) in lines.withIndex()) {
+                val lineWidth = textPaint.measureText(line)
+                val startX = getDrawStartX(lineWidth, anchorX)
                 val rect = Rect()
                 textPaint.getTextBounds(line, 0, line.length, rect)
-                val left = px
-                val top = py + i * lineHeight - rect.height()
-                val right = px + rect.width()
-                val bottom = py + i * lineHeight
+                val left = startX
+                val top = anchorY + i * lineHeight - rect.height()
+                val right = startX + lineWidth
+                val bottom = anchorY + i * lineHeight
 
                 overallLeft = min(overallLeft, left)
                 overallRight = max(overallRight, right)
@@ -113,10 +155,10 @@ class CanvasView @JvmOverloads constructor(
             }
 
             val angleRad = Math.toRadians(-rotation.toDouble())
-            val dx = touchX - px
-            val dy = touchY - py
-            val rotX = (dx * cos(angleRad) - dy * sin(angleRad)).toFloat() + px
-            val rotY = (dx * sin(angleRad) + dy * cos(angleRad)).toFloat() + py
+            val dx = touchX - anchorX
+            val dy = touchY - anchorY
+            val rotX = (dx * cos(angleRad) - dy * sin(angleRad)).toFloat() + anchorX
+            val rotY = (dx * sin(angleRad) + dy * cos(angleRad)).toFloat() + anchorY
 
             return rotX in overallLeft..overallRight && rotY in overallTop..overallBottom
         }
@@ -161,7 +203,7 @@ class CanvasView @JvmOverloads constructor(
                 val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                     colorFilter = PorterDuffColorFilter(tintColor!!, PorterDuff.Mode.SRC_ATOP)
                 }
-                canvas.drawBitmap(bitmap, null, destRect, paint)   // ✅ تینت اعمال می‌شود
+                canvas.drawBitmap(bitmap, null, destRect, paint)
             } else {
                 canvas.drawBitmap(bitmap, null, destRect, null)
             }
@@ -315,20 +357,26 @@ class CanvasView @JvmOverloads constructor(
             is TextElement -> {
                 val lineHeight = el.size * scaleX * 1.2f
                 val paint = Paint().apply { typeface = el.typeface; textSize = el.size * scaleX }
-                val px = el.x * scaleX + offsetX
-                val py = el.y * scaleY + offsetY
+                val anchorX = el.x * scaleX + offsetX
+                val anchorY = el.y * scaleY + offsetY
+
                 var minX = Float.MAX_VALUE; var minY = Float.MAX_VALUE
                 var maxX = Float.MIN_VALUE; var maxY = Float.MIN_VALUE
+
                 for ((i, line) in el.lines.withIndex()) {
+                    val lineWidth = paint.measureText(line)
+                    val startX = el.getDrawStartX(lineWidth, anchorX)
                     val rect = Rect()
                     paint.getTextBounds(line, 0, line.length, rect)
-                    val left = px
-                    val top = py + i * lineHeight - rect.height()
-                    val right = px + rect.width()
-                    val bottom = py + i * lineHeight
+                    val left = startX
+                    val top = anchorY + i * lineHeight - rect.height()
+                    val right = startX + lineWidth
+                    val bottom = anchorY + i * lineHeight
+
                     minX = min(minX, left); maxX = max(maxX, right)
                     minY = min(minY, top); maxY = max(maxY, bottom)
                 }
+
                 val a = Math.toRadians(el.rotation.toDouble())
                 val corners = arrayOf(
                     floatArrayOf(minX, minY), floatArrayOf(maxX, minY),
@@ -337,9 +385,9 @@ class CanvasView @JvmOverloads constructor(
                 var rminX = Float.MAX_VALUE; var rminY = Float.MAX_VALUE
                 var rmaxX = Float.MIN_VALUE; var rmaxY = Float.MIN_VALUE
                 for (c in corners) {
-                    val dx = c[0] - px; val dy = c[1] - py
-                    val rx = (dx * cos(a) - dy * sin(a)).toFloat() + px
-                    val ry = (dx * sin(a) + dy * cos(a)).toFloat() + py
+                    val dx = c[0] - anchorX; val dy = c[1] - anchorY
+                    val rx = (dx * cos(a) - dy * sin(a)).toFloat() + anchorX
+                    val ry = (dx * sin(a) + dy * cos(a)).toFloat() + anchorY
                     rminX = min(rminX, rx); rmaxX = max(rmaxX, rx)
                     rminY = min(rminY, ry); rmaxY = max(rmaxY, ry)
                 }
