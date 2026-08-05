@@ -65,7 +65,7 @@ class CanvasView @JvmOverloads constructor(
             var i = 0
             while (i < line.length) {
                 val c = line[i]
-                if (c == '§') {                     // زیرخط
+                if (c == '§') {
                     val endIdx = line.indexOf('§', i + 1)
                     if (endIdx != -1) {
                         val inner = line.substring(i + 1, endIdx)
@@ -73,7 +73,7 @@ class CanvasView @JvmOverloads constructor(
                         i = endIdx + 1
                         continue
                     }
-                } else if (c == '£') {              // خط بالا
+                } else if (c == '£') {
                     val endIdx = line.indexOf('£', i + 1)
                     if (endIdx != -1) {
                         val inner = line.substring(i + 1, endIdx)
@@ -121,23 +121,18 @@ class CanvasView @JvmOverloads constructor(
                 val segments = parseLine(line)
                 if (segments.isEmpty()) continue
 
-                // محاسبه عرض کل (بدون تغییر ترتیب)
                 var totalWidth = 0f
                 for (seg in segments) {
                     totalWidth += textPaint.measureText(seg.text)
                 }
 
-                // نقطهٔ شروع بر اساس تراز – دیگر از RTL برای جابجایی استفاده نمی‌شود
                 var currentX = getDrawStartX(totalWidth, anchorX)
 
                 for (seg in segments) {
                     val segWidth = textPaint.measureText(seg.text)
-                    val left = currentX
 
-                    // رسم متن
-                    canvas.drawText(seg.text, left, anchorY + lineIdx * lineHeight, textPaint)
+                    canvas.drawText(seg.text, currentX, anchorY + lineIdx * lineHeight, textPaint)
 
-                    // رسم خطوط
                     val rect = Rect()
                     textPaint.getTextBounds(seg.text, 0, seg.text.length, rect)
                     if (seg.underline || underline) {
@@ -147,7 +142,7 @@ class CanvasView @JvmOverloads constructor(
                             style = Paint.Style.STROKE
                         }
                         val lineY = anchorY + lineIdx * lineHeight + rect.height() * 0.35f
-                        canvas.drawLine(left, lineY, left + segWidth, lineY, linePaint)
+                        canvas.drawLine(currentX, lineY, currentX + segWidth, lineY, linePaint)
                     }
                     if (seg.overline) {
                         val linePaint = Paint().apply {
@@ -156,7 +151,7 @@ class CanvasView @JvmOverloads constructor(
                             style = Paint.Style.STROKE
                         }
                         val lineY = anchorY + lineIdx * lineHeight - rect.height() * 1.0f - 4f * scaleX
-                        canvas.drawLine(left, lineY, left + segWidth, lineY, linePaint)
+                        canvas.drawLine(currentX, lineY, currentX + segWidth, lineY, linePaint)
                     }
 
                     currentX += segWidth
@@ -310,6 +305,45 @@ class CanvasView @JvmOverloads constructor(
     private var draggingIndex = -1
     private var lastTouchX = 0f
     private var lastTouchY = 0f
+
+    // تابع جدید برای تغییر تراز بدون پریدن کادر
+    fun setTextAlignment(element: TextElement, newAlignment: TextAlignment) {
+        val oldAlignment = element.alignment
+        if (oldAlignment == newAlignment) return
+
+        val paint = Paint().apply {
+            typeface = element.typeface
+            textSize = element.size
+        }
+        val width = paint.measureText(element.text)
+
+        when (oldAlignment) {
+            TextAlignment.LEFT -> {
+                when (newAlignment) {
+                    TextAlignment.CENTER -> element.x += width / 2f
+                    TextAlignment.RIGHT -> element.x += width
+                    else -> {}
+                }
+            }
+            TextAlignment.CENTER -> {
+                when (newAlignment) {
+                    TextAlignment.LEFT -> element.x -= width / 2f
+                    TextAlignment.RIGHT -> element.x += width / 2f
+                    else -> {}
+                }
+            }
+            TextAlignment.RIGHT -> {
+                when (newAlignment) {
+                    TextAlignment.LEFT -> element.x -= width
+                    TextAlignment.CENTER -> element.x -= width / 2f
+                    else -> {}
+                }
+            }
+        }
+
+        element.alignment = newAlignment
+        invalidate()
+    }
 
     fun changeCanvasSize(newWidth: Float, newHeight: Float) {
         if (newWidth == designWidth && newHeight == designHeight) return
