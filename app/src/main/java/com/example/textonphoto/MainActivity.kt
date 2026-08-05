@@ -70,6 +70,7 @@ class MainActivity : AppCompatActivity() {
             updateUI()
         }
 
+        // ---------- دکمه‌ها ----------
         findViewById<Button>(R.id.btnAddText).setOnClickListener { showAddTextDialog() }
         findViewById<Button>(R.id.btnEdit).setOnClickListener {
             if (selectedIndex == -1) return@setOnClickListener
@@ -125,7 +126,6 @@ class MainActivity : AppCompatActivity() {
                 canvasView.invalidate()
             }
         }
-
         btnAlignLeft.setOnClickListener { setTextAlignment(CanvasView.TextAlignment.LEFT) }
         btnAlignCenter.setOnClickListener { setTextAlignment(CanvasView.TextAlignment.CENTER) }
         btnAlignRight.setOnClickListener { setTextAlignment(CanvasView.TextAlignment.RIGHT) }
@@ -167,6 +167,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnTextLayers).setOnClickListener { showTextLayersDialog() }
     }
 
+    // ---------- تراز ----------
     private fun setTextAlignment(align: CanvasView.TextAlignment) {
         if (selectedIndex == -1) return
         val el = canvasView.elements[selectedIndex]
@@ -178,7 +179,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // ===================== پنل لایه‌های متن =====================
+    // ---------- لایه‌های متن ----------
     private fun showTextLayersDialog() {
         val textElements = canvasView.elements.filterIsInstance<CanvasView.TextElement>()
         val container = LinearLayout(this).apply {
@@ -190,10 +191,9 @@ class MainActivity : AppCompatActivity() {
             container.addView(TextView(this).apply {
                 text = "هیچ متنی روی بوم نیست"
                 setTextColor(Color.BLACK)
-                textSize = 16f
             })
         } else {
-            for ((i, el) in textElements.withIndex()) {
+            for ((_, el) in textElements.withIndex()) {
                 val row = LinearLayout(this).apply {
                     orientation = LinearLayout.HORIZONTAL
                     layoutParams = LinearLayout.LayoutParams(
@@ -205,14 +205,14 @@ class MainActivity : AppCompatActivity() {
                 val preview = TextView(this).apply {
                     text = el.getPreview()
                     layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-                    textSize = 16f; setTextColor(Color.BLACK)
+                    setTextColor(Color.BLACK)
                 }
                 val editBtn = ImageButton(this).apply {
                     setImageResource(android.R.drawable.ic_menu_edit)
                     setOnClickListener {
-                        val realIndex = canvasView.elements.indexOf(el)
-                        selectedIndex = realIndex
-                        canvasView.selectedElementIndex = realIndex
+                        val realIdx = canvasView.elements.indexOf(el)
+                        selectedIndex = realIdx
+                        canvasView.selectedElementIndex = realIdx
                         updateUI()
                         (parent?.parent?.parent as? AlertDialog)?.dismiss()
                         showEditTextDialog(el)
@@ -225,22 +225,18 @@ class MainActivity : AppCompatActivity() {
         AlertDialog.Builder(this, android.R.style.Theme_Material_Light_Dialog_Alert)
             .setTitle("لایه‌های متن")
             .setView(ScrollView(this).apply { addView(container) })
-            .setPositiveButton("بستن", null)
+            .setPositiveButton("بستن 🔚", null)
             .show()
     }
 
-    // ===================== تاریخچه =====================
+    // ---------- تاریخچه ----------
     private fun loadHistory() {
         if (historyFile.exists()) {
             historyTexts.clear()
             historyTexts.addAll(historyFile.readLines().filter { it.isNotBlank() })
         }
     }
-
-    private fun saveHistory() {
-        historyFile.writeText(historyTexts.joinToString("\n"))
-    }
-
+    private fun saveHistory() { historyFile.writeText(historyTexts.joinToString("\n")) }
     private fun addToHistory(text: String) {
         if (!historyTexts.contains(text)) {
             historyTexts.add(0, text)
@@ -259,11 +255,10 @@ class MainActivity : AppCompatActivity() {
             container.addView(TextView(this).apply {
                 text = "تاریخچه خالی است"
                 setTextColor(Color.BLACK)
-                textSize = 16f
             })
         } else {
             for (i in historyTexts.indices) {
-                var text = historyTexts[i]  // var به جای val
+                var text = historyTexts[i]
                 val row = LinearLayout(this).apply {
                     orientation = LinearLayout.HORIZONTAL
                     layoutParams = LinearLayout.LayoutParams(
@@ -295,7 +290,6 @@ class MainActivity : AppCompatActivity() {
                             container.addView(TextView(context).apply {
                                 text = "تاریخچه خالی است"
                                 setTextColor(Color.BLACK)
-                                textSize = 16f
                             })
                         }
                         toast("حذف شد")
@@ -314,7 +308,6 @@ class MainActivity : AppCompatActivity() {
                 container.addView(TextView(context).apply {
                     text = "تاریخچه خالی است"
                     setTextColor(Color.BLACK)
-                    textSize = 16f
                 })
                 toast("همه حذف شدند")
             }
@@ -323,13 +316,13 @@ class MainActivity : AppCompatActivity() {
         val dialog = AlertDialog.Builder(this, android.R.style.Theme_Material_Light_Dialog_Alert)
             .setTitle("تاریخچه متون")
             .setView(ScrollView(this).apply { addView(container) })
-            .setPositiveButton("بستن ❌", null)
+            .setPositiveButton("بستن 🔚", null)
             .create()
         dialog.show()
         dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(Color.BLACK)
     }
 
-    // ===================== افزودن متن (با راهنما) =====================
+    // ---------- افزودن متن ----------
     private fun showAddTextDialog() {
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -337,15 +330,13 @@ class MainActivity : AppCompatActivity() {
         }
         val editText = EditText(this).apply {
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
-            minLines = 3
-            hint = "متن خود را بنویسید"
+            minLines = 3; hint = "متن خود را بنویسید"
         }
         layout.addView(editText)
 
         val guideText = TextView(this).apply {
-            text = "برای زیرخط‌دار کردن یک کلمه، آن را بین دو علامت «۷» قرار دهید\nمثال: سلام۷علی۷ بچه"
-            textSize = 13f
-            setTextColor(Color.DKGRAY)
+            text = "برای زیرخط از «۷» و برای خط بالا از «۶» استفاده کنید"
+            textSize = 13f; setTextColor(Color.DKGRAY)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -353,6 +344,7 @@ class MainActivity : AppCompatActivity() {
         }
         layout.addView(guideText)
 
+        // اعداد دایره‌ای
         val numContainer = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         val hscroll = HorizontalScrollView(this)
         for (i in 1..50) {
@@ -389,11 +381,10 @@ class MainActivity : AppCompatActivity() {
                     addToHistory(text)
                 }
             }
-            .setNegativeButton("انصراف", null)
-            .show()
+            .setNegativeButton("انصراف", null).show()
     }
 
-    // ===================== ویرایش متن (مداد) با راهنما =====================
+    // ---------- ویرایش متن (مداد) ----------
     private fun showEditTextDialog(textEl: CanvasView.TextElement) {
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -407,15 +398,36 @@ class MainActivity : AppCompatActivity() {
         layout.addView(editText)
 
         val guideText = TextView(this).apply {
-            text = "برای زیرخط‌دار کردن یک کلمه، آن را بین دو علامت «۷» قرار دهید\nمثال: سلام۷علی۷ بچه"
-            textSize = 13f
-            setTextColor(Color.DKGRAY)
+            text = "برای زیرخط از «۷» و برای خط بالا از «۶» استفاده کنید"
+            textSize = 13f; setTextColor(Color.DKGRAY)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply { topMargin = 8 }
         }
         layout.addView(guideText)
+
+        // اعداد دایره‌ای
+        val numContainer = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        val hscroll = HorizontalScrollView(this)
+        for (i in 1..50) {
+            val btn = TextView(this).apply {
+                text = getCircledNumber(i)
+                background = getDrawable(R.drawable.circle_number_bg)
+                gravity = Gravity.CENTER
+                val size = (44 * resources.displayMetrics.density).toInt()
+                width = size; height = size; textSize = 16f
+                setOnClickListener {
+                    val s = maxOf(editText.selectionStart, 0)
+                    val e = maxOf(editText.selectionEnd, 0)
+                    editText.text.replace(s, e, text)
+                    editText.setSelection(s + text.length)
+                }
+            }
+            numContainer.addView(btn)
+        }
+        hscroll.addView(numContainer)
+        layout.addView(hscroll)
 
         AlertDialog.Builder(this)
             .setTitle("ویرایش متن")
@@ -429,11 +441,10 @@ class MainActivity : AppCompatActivity() {
                     addToHistory(newText)
                 }
             }
-            .setNegativeButton("انصراف", null)
-            .show()
+            .setNegativeButton("انصراف", null).show()
     }
 
-    // ===================== رنگ / برچسب / ذخیره =====================
+    // ---------- رنگ ----------
     private fun showColorPicker(forImage: Boolean) {
         val colors = arrayOf<Pair<Int?, String>>(
             0xFF000000.toInt() to "سیاه", 0xFFFFFFFF.toInt() to "سفید",
@@ -464,6 +475,7 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton("انصراف", null).show()
     }
 
+    // ---------- برچسب ----------
     private fun addSticker(uri: Uri) {
         try {
             val inputStream = contentResolver.openInputStream(uri) ?: return
@@ -481,6 +493,7 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) { toast("خطا در بارگذاری تصویر") }
     }
 
+    // ---------- ذخیره تصویر ----------
     @OptIn(DelicateCoroutinesApi::class)
     private fun saveImage() {
         GlobalScope.launch(Dispatchers.IO) {
@@ -502,7 +515,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // ===================== ابزارهای عمومی =====================
+    // ---------- ابزارهای عمومی ----------
     private fun pushUndo() { undoStack.add(canvasView.elements.map { it.clone() }); if (undoStack.size > MAX_UNDO) undoStack.removeAt(0) }
     private fun performUndo() {
         if (undoStack.size > 1) { undoStack.removeLast(); val prev = undoStack.last(); canvasView.elements.clear(); canvasView.elements.addAll(prev); selectedIndex = -1; canvasView.selectedElementIndex = -1; canvasView.invalidate(); updateUI() }
