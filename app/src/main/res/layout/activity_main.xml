@@ -85,7 +85,7 @@
                 android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1"
                 android:text="زیرخط" android:textSize="14sp" android:layout_marginHorizontal="1dp" />
 
-            <!-- دکمه‌های تراز بزرگ‌تر -->
+            <!-- دکمه‌های تراز (فتوشاپی) -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnAlignLeft"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
@@ -108,7 +108,7 @@
                 app:cornerRadius="8dp" />
         </LinearLayout>
 
-        <!-- ردیف ۳: چرخش و اندازه -->
+        <!-- ردیف ۳: چرخش و اندازه (ایموجی‌های کامل) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
