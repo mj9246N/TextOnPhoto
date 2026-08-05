@@ -245,6 +245,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showHistoryDialog() {
+        // استفاده از ContextThemeWrapper برای تضمین تم روشن و متن مشکی
+        val lightContext = ContextThemeWrapper(this, android.R.style.Theme_Material_Light_Dialog_Alert)
         val container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(8, 8, 8, 8)
@@ -270,7 +272,7 @@ class MainActivity : AppCompatActivity() {
                     text = text
                     layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
                     textSize = 16f; maxLines = 2
-                    setTextColor(Color.BLACK)
+                    setTextColor(Color.BLACK)   // تضمین رنگ
                     setBackgroundColor(Color.TRANSPARENT)
                 }
                 val copyBtn = ImageButton(this).apply {
@@ -314,7 +316,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         container.addView(deleteAllBtn)
-        val dialog = AlertDialog.Builder(this, android.R.style.Theme_Material_Light_Dialog_Alert)
+        val dialog = AlertDialog.Builder(lightContext)
             .setTitle("تاریخچه متون")
             .setView(ScrollView(this).apply { addView(container) })
             .setPositiveButton("بستن 🔚", null)
