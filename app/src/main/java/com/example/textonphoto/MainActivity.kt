@@ -24,11 +24,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvRotation: TextView
     private lateinit var btnLock: Button
     private lateinit var btnStyle: Button
+    private lateinit var btnAlignLeft: Button
+    private lateinit var btnAlignCenter: Button
+    private lateinit var btnAlignRight: Button
 
     private val undoStack = mutableListOf<List<CanvasView.CanvasElement>>()
     private val MAX_UNDO = 100
 
-    // تاریخچه پایدار (ذخیره در فایل)
+    // تاریخچه پایدار
     private val historyFile by lazy { File(filesDir, "history.txt") }
     private val historyTexts = mutableListOf<String>()
 
@@ -47,8 +50,10 @@ class MainActivity : AppCompatActivity() {
         tvRotation = findViewById(R.id.tvRotation)
         btnLock = findViewById(R.id.btnLock)
         btnStyle = findViewById(R.id.btnStyle)
+        btnAlignLeft = findViewById(R.id.btnAlignLeft)
+        btnAlignCenter = findViewById(R.id.btnAlignCenter)
+        btnAlignRight = findViewById(R.id.btnAlignRight)
 
-        // بارگذاری فونت پیش‌فرض
         try {
             defaultTypeface = Typeface.createFromAsset(assets, "fonts/default.ttf")
             Toast.makeText(this, "فونت پیش‌فرض با موفقیت بارگذاری شد", Toast.LENGTH_SHORT).show()
@@ -57,9 +62,7 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "فونت پیش‌فرض یافت نشد! مسیر: assets/fonts/default.ttf", Toast.LENGTH_LONG).show()
         }
 
-        // بارگذاری تاریخچه از فایل
         loadHistory()
-
         pushUndo()
 
         canvasView.onElementSelected = { idx ->
@@ -123,6 +126,11 @@ class MainActivity : AppCompatActivity() {
                 canvasView.invalidate()
             }
         }
+
+        btnAlignLeft.setOnClickListener { setTextAlignment(CanvasView.TextAlignment.LEFT) }
+        btnAlignCenter.setOnClickListener { setTextAlignment(CanvasView.TextAlignment.CENTER) }
+        btnAlignRight.setOnClickListener { setTextAlignment(CanvasView.TextAlignment.RIGHT) }
+
         findViewById<Button>(R.id.btnRotateLeft).setOnClickListener { rotateSelected(-5f) }
         findViewById<Button>(R.id.btnRotateRight).setOnClickListener { rotateSelected(5f) }
         findViewById<Button>(R.id.btnZoomIn).setOnClickListener {
@@ -157,9 +165,69 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnUndo).setOnClickListener { performUndo() }
         findViewById<Button>(R.id.btnSave).setOnClickListener { saveImage() }
         findViewById<Button>(R.id.btnHistory).setOnClickListener { showHistoryDialog() }
+        findViewById<Button>(R.id.btnTextLayers).setOnClickListener { showTextLayersDialog() }
     }
 
-    // ===================== تاریخچه (پایدار با فایل) =====================
+    private fun setTextAlignment(align: CanvasView.TextAlignment) {
+        if (selectedIndex == -1) return
+        val el = canvasView.elements[selectedIndex]
+        if (el is CanvasView.TextElement) {
+            if (el.locked) { toast("قفل است"); return }
+            pushUndo()
+            el.alignment = align
+            canvasView.invalidate()
+        }
+    }
+
+    // ===================== پنل لایه‌های متن =====================
+    private fun showTextLayersDialog() {
+        val textElements = canvasView.elements.filterIsInstance<CanvasView.TextElement>()
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(8, 8, 8, 8)
+            setBackgroundColor(Color.WHITE)
+        }
+        if (textElements.isEmpty()) {
+            container.addView(TextView(this).apply {
+                text = "هیچ متنی روی بوم نیست"
+                setTextColor(Color.BLACK)
+                textSize = 16f
+            })
+        } else {
+            for ((i, el) in textElements.withIndex()) {
+                val row = LinearLayout(this).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { setMargins(0, 4, 0, 4) }
+                    gravity = Gravity.CENTER_VERTICAL
+                }
+                val preview = TextView(this).apply {
+                    text = el.getPreview()
+                    layoutParams = LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f)
+                    textSize = 16f; setTextColor(Color.BLACK)
+                }
+                val editBtn = ImageButton(this).apply {
+                    setImageResource(android.R.drawable.ic_menu_edit)
+                    setOnClickListener {
+                        val realIndex = canvasView.elements.indexOf(el)
+                        selectedIndex = realIndex
+                        canvasView.selectedElementIndex = realIndex
+                        updateUI()
+                        (parent?.parent?.parent as? AlertDialog)?.dismiss()
+                        showEditTextDialog(el)
+                    }
+                }
+                row.addView(preview); row.addView(editBtn)
+                container.addView(row)
+            }
+        }
+        AlertDialog.Builder(this, android.R.style.Theme_Material_Light_Dialog_Alert)
+            .setTitle("لایه‌های متن")
+            .setView(ScrollView(this).apply { addView(container) })
+            .setPositiveButton("بستن", null)
+            .show()
+    }
+
+    // ===================== تاریخچه =====================
     private fun loadHistory() {
         if (historyFile.exists()) {
             historyTexts.clear()
@@ -180,67 +248,83 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showHistoryDialog() {
-        val builder = AlertDialog.Builder(this, android.R.style.Theme_Material_Light_Dialog_Alert)
-        builder.setTitle("تاریخچه متون")
-
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(8, 8, 8, 8)
+            setBackgroundColor(Color.WHITE)
+        }
         if (historyTexts.isEmpty()) {
-            builder.setMessage("تاریخچه خالی است")
-            builder.setPositiveButton("بستن", null)
-            builder.show()
-            return
-        }
-
-        // آداپتور لیست
-        val listAdapter = object : ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, historyTexts.toList()) {
-            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-                val view = convertView ?: layoutInflater.inflate(android.R.layout.simple_list_item_1, parent, false)
-                val textView = view.findViewById<TextView>(android.R.id.text1)
-                textView.text = getItem(position)
-                textView.setTextColor(Color.BLACK)
-                textView.textSize = 16f
-                return view
-            }
-        }
-
-        builder.setAdapter(listAdapter) { dialog, which ->
-            val selectedText = historyTexts[which]
-            AlertDialog.Builder(this@MainActivity, android.R.style.Theme_Material_Light_Dialog_Alert)
-                .setTitle(selectedText)
-                .setItems(arrayOf("کپی", "حذف")) { _, opt ->
-                    when (opt) {
-                        0 -> {
-                            (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
-                                .setPrimaryClip(ClipData.newPlainText("text", selectedText))
-                            toast("کپی شد")
-                        }
-                        1 -> {
-                            historyTexts.removeAt(which)
-                            saveHistory()
-                            listAdapter.notifyDataSetChanged()
-                            if (historyTexts.isEmpty()) {
-                                dialog.dismiss()
-                                showHistoryDialog()
-                            }
-                            toast("حذف شد")
-                        }
+            container.addView(TextView(this).apply {
+                text = "تاریخچه خالی است"
+                setTextColor(Color.BLACK)
+                textSize = 16f
+            })
+        } else {
+            for (i in historyTexts.indices) {
+                val text = historyTexts[i]
+                val row = LinearLayout(this).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { setMargins(0, 4, 0, 4) }
+                    gravity = Gravity.CENTER_VERTICAL
+                }
+                val tv = TextView(this).apply {
+                    text = text
+                    layoutParams = LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f)
+                    textSize = 16f; maxLines = 2; setTextColor(Color.BLACK)
+                }
+                val copyBtn = ImageButton(this).apply {
+                    setImageResource(android.R.drawable.ic_menu_edit)
+                    setOnClickListener {
+                        (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
+                            .setPrimaryClip(ClipData.newPlainText("text", text))
+                        toast("کپی شد")
                     }
                 }
-                .setPositiveButton("بستن", null)
-                .show()
+                val delBtn = ImageButton(this).apply {
+                    setImageResource(android.R.drawable.ic_menu_delete)
+                    setOnClickListener {
+                        historyTexts.removeAt(i); saveHistory()
+                        container.removeView(row)
+                        if (historyTexts.isEmpty()) {
+                            container.removeAllViews()
+                            container.addView(TextView(context).apply {
+                                text = "تاریخچه خالی است"
+                                setTextColor(Color.BLACK)
+                                textSize = 16f
+                            })
+                        }
+                        toast("حذف شد")
+                    }
+                }
+                row.addView(tv); row.addView(copyBtn); row.addView(delBtn)
+                container.addView(row)
+            }
         }
-
-        builder.setPositiveButton("بستن") { dialog, _ -> dialog.dismiss() }
-        builder.setNeutralButton("حذف همه🗑️") { _, _ ->
-            historyTexts.clear()
-            saveHistory()
-            showHistoryDialog()
-            toast("همه حذف شدند")
+        val deleteAllBtn = Button(this).apply {
+            text = "حذف همه 🗑️"
+            setTextColor(Color.BLACK)
+            setOnClickListener {
+                historyTexts.clear(); saveHistory()
+                container.removeAllViews()
+                container.addView(TextView(context).apply {
+                    text = "تاریخچه خالی است"
+                    setTextColor(Color.BLACK)
+                    textSize = 16f
+                })
+                toast("همه حذف شدند")
+            }
         }
-
-        builder.show()
+        container.addView(deleteAllBtn)
+        val dialog = AlertDialog.Builder(this, android.R.style.Theme_Material_Light_Dialog_Alert)
+            .setTitle("تاریخچه متون")
+            .setView(ScrollView(this).apply { addView(container) })
+            .setPositiveButton("بستن ❌", null)
+            .create()
+        dialog.show()
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(Color.BLACK)
     }
 
-    // ===================== افزودن/ویرایش متن =====================
+    // ===================== افزودن متن (با راهنما) =====================
     private fun showAddTextDialog() {
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -253,6 +337,16 @@ class MainActivity : AppCompatActivity() {
         }
         layout.addView(editText)
 
+        // راهنما برای قابلیت ۷...۷
+        val guideText = TextView(this).apply {
+            text = "برای زیرخط‌دار کردن یک کلمه، آن را بین دو علامت «۷» قرار دهید\nمثال: سلام۷علی۷ بچه"
+            textSize = 13f
+            setTextColor(Color.DKGRAY)
+            layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { topMargin = 8 }
+        }
+        layout.addView(guideText)
+
+        // اعداد دایره‌ای
         val numContainer = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         val hscroll = HorizontalScrollView(this)
         for (i in 1..50) {
@@ -286,27 +380,45 @@ class MainActivity : AppCompatActivity() {
                     selectedIndex = canvasView.elements.size - 1
                     canvasView.selectedElementIndex = selectedIndex
                     canvasView.invalidate(); updateUI()
-                    addToHistory(text)   // ذخیره در تاریخچه پایدار
+                    addToHistory(text)
                 }
             }
             .setNegativeButton("انصراف", null)
             .show()
     }
 
+    // ===================== ویرایش متن (مداد) با راهنما =====================
     private fun showEditTextDialog(textEl: CanvasView.TextElement) {
+        val layout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(16, 16, 16, 16)
+        }
         val editText = EditText(this).apply {
-            setText(textEl.text)
+            setText(textEl.text)   // متن خام با ۷ها
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
             minLines = 3
         }
+        layout.addView(editText)
+
+        // راهنما
+        val guideText = TextView(this).apply {
+            text = "برای زیرخط‌دار کردن یک کلمه، آن را بین دو علامت «۷» قرار دهید\nمثال: سلام۷علی۷ بچه"
+            textSize = 13f
+            setTextColor(Color.DKGRAY)
+            layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { topMargin = 8 }
+        }
+        layout.addView(guideText)
+
         AlertDialog.Builder(this)
             .setTitle("ویرایش متن")
-            .setView(editText)
+            .setView(layout)
             .setPositiveButton("ذخیره") { _, _ ->
                 val newText = editText.text.toString().trim()
                 if (newText.isNotEmpty()) {
-                    pushUndo(); textEl.text = newText; canvasView.invalidate()
-                    addToHistory(newText)   // ذخیره در تاریخچه
+                    pushUndo()
+                    textEl.text = newText   // ذخیره با ۷ها
+                    canvasView.invalidate()
+                    addToHistory(newText)
                 }
             }
             .setNegativeButton("انصراف", null)
@@ -327,9 +439,7 @@ class MainActivity : AppCompatActivity() {
         val el = canvasView.elements[selectedIndex]
         val list = colors.toMutableList(); if (forImage) list.add(null to "بدون رنگ")
         for ((color, _) in list) {
-            val v = View(this).apply {
-                setBackgroundColor(color ?: Color.TRANSPARENT)
-                layoutParams = ViewGroup.LayoutParams(80, 80)
+            val v = View(this).apply { setBackgroundColor(color ?: Color.TRANSPARENT); layoutParams = ViewGroup.LayoutParams(80, 80)
                 setOnClickListener {
                     when {
                         color == null && el is CanvasView.ImageElement -> { pushUndo(); (el as CanvasView.ImageElement).tintColor = null; canvasView.invalidate() }
@@ -338,14 +448,12 @@ class MainActivity : AppCompatActivity() {
                     }
                     (parent?.parent?.parent as? AlertDialog)?.dismiss()
                 }
-            }
-            grid.addView(v)
+            }; grid.addView(v)
         }
         AlertDialog.Builder(this)
             .setTitle(if (forImage) "تینت عکس" else "رنگ متن")
             .setView(grid)
-            .setNegativeButton("انصراف", null)
-            .show()
+            .setNegativeButton("انصراف", null).show()
     }
 
     private fun addSticker(uri: Uri) {
