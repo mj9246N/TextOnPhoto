@@ -55,13 +55,13 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnCopy"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                style="@style/Widget.MaterialComponents.Button"
                 android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1"
                 android:text="کپی" android:textSize="14sp" android:layout_marginHorizontal="1dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnDelete"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                style="@style/Widget.MaterialComponents.Button"
                 android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1"
                 android:text="حذف" android:textSize="14sp" android:layout_marginHorizontal="1dp" />
         </LinearLayout>
@@ -75,40 +75,40 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnColor"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                style="@style/Widget.MaterialComponents.Button"
                 android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1"
                 android:text="رنگ" android:textSize="14sp" android:layout_marginHorizontal="1dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnStyle"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                style="@style/Widget.MaterialComponents.Button"
                 android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1"
                 android:text="زیرخط" android:textSize="14sp" android:layout_marginHorizontal="1dp" />
 
-            <!-- دکمه‌های تراز (فتوشاپی) -->
+            <!-- دکمه‌های تراز با استایل مشابه -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnAlignLeft"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                style="@style/Widget.MaterialComponents.Button"
                 android:layout_width="48dp" android:layout_height="48dp"
                 android:text="L" android:textSize="18sp" android:layout_marginHorizontal="1dp"
-                app:cornerRadius="8dp" />
+                app:cornerRadius="24dp" android:minWidth="0dp" android:minHeight="0dp" android:padding="0dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnAlignCenter"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                style="@style/Widget.MaterialComponents.Button"
                 android:layout_width="48dp" android:layout_height="48dp"
                 android:text="C" android:textSize="18sp" android:layout_marginHorizontal="1dp"
-                app:cornerRadius="8dp" />
+                app:cornerRadius="24dp" android:minWidth="0dp" android:minHeight="0dp" android:padding="0dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnAlignRight"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                style="@style/Widget.MaterialComponents.Button"
                 android:layout_width="48dp" android:layout_height="48dp"
                 android:text="R" android:textSize="18sp" android:layout_marginHorizontal="1dp"
-                app:cornerRadius="8dp" />
+                app:cornerRadius="24dp" android:minWidth="0dp" android:minHeight="0dp" android:padding="0dp" />
         </LinearLayout>
 
-        <!-- ردیف ۳: چرخش و اندازه (ایموجی‌های کامل) -->
+        <!-- ردیف ۳: چرخش و اندازه (دکمه‌های گرد کامل) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -117,10 +117,11 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnRotateLeft"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="52dp" android:layout_height="52dp"
+                style="@style/Widget.MaterialComponents.Button"
+                android:layout_width="48dp" android:layout_height="48dp"
                 android:text="↖️" android:textSize="22sp"
-                android:layout_marginEnd="2dp" app:cornerRadius="26dp" />
+                android:layout_marginEnd="2dp"
+                app:cornerRadius="24dp" android:minWidth="0dp" android:minHeight="0dp" android:padding="0dp" />
 
             <TextView
                 android:id="@+id/tvRotation"
@@ -130,19 +131,21 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnRotateRight"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="52dp" android:layout_height="52dp"
+                style="@style/Widget.MaterialComponents.Button"
+                android:layout_width="48dp" android:layout_height="48dp"
                 android:text="↗️" android:textSize="22sp"
-                android:layout_marginStart="2dp" app:cornerRadius="26dp" />
+                android:layout_marginStart="2dp"
+                app:cornerRadius="24dp" android:minWidth="0dp" android:minHeight="0dp" android:padding="0dp" />
 
             <View android:layout_width="8dp" android:layout_height="0dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnZoomOut"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="52dp" android:layout_height="52dp"
+                style="@style/Widget.MaterialComponents.Button"
+                android:layout_width="48dp" android:layout_height="48dp"
                 android:text="🔙" android:textSize="22sp"
-                android:layout_marginEnd="2dp" app:cornerRadius="26dp" />
+                android:layout_marginEnd="2dp"
+                app:cornerRadius="24dp" android:minWidth="0dp" android:minHeight="0dp" android:padding="0dp" />
 
             <TextView
                 android:id="@+id/tvSize"
@@ -152,10 +155,11 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnZoomIn"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="52dp" android:layout_height="52dp"
+                style="@style/Widget.MaterialComponents.Button"
+                android:layout_width="48dp" android:layout_height="48dp"
                 android:text="🔝" android:textSize="22sp"
-                android:layout_marginStart="2dp" app:cornerRadius="26dp" />
+                android:layout_marginStart="2dp"
+                app:cornerRadius="24dp" android:minWidth="0dp" android:minHeight="0dp" android:padding="0dp" />
         </LinearLayout>
 
         <!-- ردیف ۴: برچسب، قفل، برگشت، ذخیره -->
