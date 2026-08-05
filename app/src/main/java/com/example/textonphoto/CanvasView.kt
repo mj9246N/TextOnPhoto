@@ -83,7 +83,6 @@ class CanvasView @JvmOverloads constructor(
                         continue
                     }
                 }
-                // else normal character
                 val sb = StringBuilder()
                 while (i < line.length && line[i] != '۷' && line[i] != '۶') {
                     sb.append(line[i])
@@ -92,7 +91,6 @@ class CanvasView @JvmOverloads constructor(
                 if (sb.isNotEmpty()) {
                     segments.add(TextSegment(sb.toString()))
                 }
-                // i is already at the next marker or end
             }
             return segments
         }
@@ -126,7 +124,6 @@ class CanvasView @JvmOverloads constructor(
 
                 val rtl = isRtl(segments.first().text)
 
-                // محاسبه عرض کل بدون تغییر ترتیب
                 var totalWidth = 0f
                 for (seg in segments) {
                     totalWidth += textPaint.measureText(seg.text)
