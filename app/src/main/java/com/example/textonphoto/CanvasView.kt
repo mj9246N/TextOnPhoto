@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
 import android.view.MotionEvent
-import android.view.ScaleGestureDetector
 import android.view.View
 import kotlin.math.*
 
@@ -311,20 +310,6 @@ class CanvasView @JvmOverloads constructor(
     private var lastTouchX = 0f
     private var lastTouchY = 0f
 
-    private var scaleGestureDetector = ScaleGestureDetector(context, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
-        override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
-            return selectedElementIndex != -1 && !elements[selectedElementIndex].locked
-        }
-
-        override fun onScale(detector: ScaleGestureDetector): Boolean {
-            val factor = detector.scaleFactor
-            val el = elements[selectedElementIndex]
-            el.resize(factor)
-            invalidate()
-            return true
-        }
-    })
-
     fun changeCanvasSize(newWidth: Float, newHeight: Float) {
         if (newWidth == designWidth && newHeight == designHeight) return
         val oldW = designWidth
@@ -358,9 +343,6 @@ class CanvasView @JvmOverloads constructor(
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        scaleGestureDetector.onTouchEvent(event)
-        if (scaleGestureDetector.isInProgress) return true
-
         val tx = event.x; val ty = event.y
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
