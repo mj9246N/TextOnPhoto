@@ -121,40 +121,73 @@ class CanvasView @JvmOverloads constructor(
                 val segments = parseLine(line)
                 if (segments.isEmpty()) continue
 
+                val rtl = isRtl(segments.first().text)
+
                 var totalWidth = 0f
                 for (seg in segments) {
                     totalWidth += textPaint.measureText(seg.text)
                 }
 
-                var currentX = getDrawStartX(totalWidth, anchorX)
+                val startX = getDrawStartX(totalWidth, anchorX)
 
-                for (seg in segments) {
-                    val segWidth = textPaint.measureText(seg.text)
+                if (rtl) {
+                    // رسم راست‌به‌چپ: بخش‌ها از راست‌ترین نقطه چیده می‌شوند
+                    var currentX = startX + totalWidth
+                    for (seg in segments) {
+                        val segWidth = textPaint.measureText(seg.text)
+                        currentX -= segWidth
+                        canvas.drawText(seg.text, currentX, anchorY + lineIdx * lineHeight, textPaint)
 
-                    canvas.drawText(seg.text, currentX, anchorY + lineIdx * lineHeight, textPaint)
-
-                    val rect = Rect()
-                    textPaint.getTextBounds(seg.text, 0, seg.text.length, rect)
-                    if (seg.underline || underline) {
-                        val linePaint = Paint().apply {
-                            color = this@TextElement.color
-                            strokeWidth = 4f * scaleX
-                            style = Paint.Style.STROKE
+                        val rect = Rect()
+                        textPaint.getTextBounds(seg.text, 0, seg.text.length, rect)
+                        if (seg.underline || underline) {
+                            val linePaint = Paint().apply {
+                                color = this@TextElement.color
+                                strokeWidth = 4f * scaleX
+                                style = Paint.Style.STROKE
+                            }
+                            val lineY = anchorY + lineIdx * lineHeight + rect.height() * 0.35f
+                            canvas.drawLine(currentX, lineY, currentX + segWidth, lineY, linePaint)
                         }
-                        val lineY = anchorY + lineIdx * lineHeight + rect.height() * 0.35f
-                        canvas.drawLine(currentX, lineY, currentX + segWidth, lineY, linePaint)
-                    }
-                    if (seg.overline) {
-                        val linePaint = Paint().apply {
-                            color = this@TextElement.color
-                            strokeWidth = 4f * scaleX
-                            style = Paint.Style.STROKE
+                        if (seg.overline) {
+                            val linePaint = Paint().apply {
+                                color = this@TextElement.color
+                                strokeWidth = 4f * scaleX
+                                style = Paint.Style.STROKE
+                            }
+                            val lineY = anchorY + lineIdx * lineHeight - rect.height() * 1.0f - 4f * scaleX
+                            canvas.drawLine(currentX, lineY, currentX + segWidth, lineY, linePaint)
                         }
-                        val lineY = anchorY + lineIdx * lineHeight - rect.height() * 1.0f - 4f * scaleX
-                        canvas.drawLine(currentX, lineY, currentX + segWidth, lineY, linePaint)
                     }
+                } else {
+                    // رسم چپ‌به‌راست
+                    var currentX = startX
+                    for (seg in segments) {
+                        val segWidth = textPaint.measureText(seg.text)
+                        canvas.drawText(seg.text, currentX, anchorY + lineIdx * lineHeight, textPaint)
 
-                    currentX += segWidth
+                        val rect = Rect()
+                        textPaint.getTextBounds(seg.text, 0, seg.text.length, rect)
+                        if (seg.underline || underline) {
+                            val linePaint = Paint().apply {
+                                color = this@TextElement.color
+                                strokeWidth = 4f * scaleX
+                                style = Paint.Style.STROKE
+                            }
+                            val lineY = anchorY + lineIdx * lineHeight + rect.height() * 0.35f
+                            canvas.drawLine(currentX, lineY, currentX + segWidth, lineY, linePaint)
+                        }
+                        if (seg.overline) {
+                            val linePaint = Paint().apply {
+                                color = this@TextElement.color
+                                strokeWidth = 4f * scaleX
+                                style = Paint.Style.STROKE
+                            }
+                            val lineY = anchorY + lineIdx * lineHeight - rect.height() * 1.0f - 4f * scaleX
+                            canvas.drawLine(currentX, lineY, currentX + segWidth, lineY, linePaint)
+                        }
+                        currentX += segWidth
+                    }
                 }
             }
 
@@ -306,7 +339,6 @@ class CanvasView @JvmOverloads constructor(
     private var lastTouchX = 0f
     private var lastTouchY = 0f
 
-    // تابع جدید برای تغییر تراز بدون پریدن کادر
     fun setTextAlignment(element: TextElement, newAlignment: TextAlignment) {
         val oldAlignment = element.alignment
         if (oldAlignment == newAlignment) return
@@ -342,6 +374,12 @@ class CanvasView @JvmOverloads constructor(
         }
 
         element.alignment = newAlignment
+        invalidate()
+    }
+
+    fun centerElement(element: CanvasElement) {
+        element.x = designWidth / 2f
+        element.y = designHeight / 2f
         invalidate()
     }
 
