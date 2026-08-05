@@ -228,7 +228,7 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    // ---------- تاریخچه ----------
+    // ---------- تاریخچه (اصلاح نهایی رنگ سیاه) ----------
     private fun loadHistory() {
         if (historyFile.exists()) {
             historyTexts.clear()
@@ -245,17 +245,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showHistoryDialog() {
-        // استفاده از ContextThemeWrapper برای تضمین تم روشن و متن مشکی
-        val lightContext = ContextThemeWrapper(this, android.R.style.Theme_Material_Light_Dialog_Alert)
+        // تضمین تم روشن
         val container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(8, 8, 8, 8)
-            setBackgroundColor(Color.WHITE)
+            setBackgroundColor(Color.WHITE)   // پس‌زمینه کاملاً سفید
         }
+
         if (historyTexts.isEmpty()) {
             container.addView(TextView(this).apply {
                 text = "تاریخچه خالی است"
                 setTextColor(Color.BLACK)
+                textSize = 16f
             })
         } else {
             for (i in historyTexts.indices) {
@@ -271,9 +272,10 @@ class MainActivity : AppCompatActivity() {
                 val tv = TextView(this).apply {
                     text = text
                     layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-                    textSize = 16f; maxLines = 2
-                    setTextColor(Color.BLACK)   // تضمین رنگ
-                    setBackgroundColor(Color.TRANSPARENT)
+                    textSize = 16f
+                    maxLines = 2
+                    setTextColor(Color.BLACK)   // مشکی تضمینی
+                    setBackgroundColor(Color.TRANSPARENT) // پس‌زمینه شفاف
                 }
                 val copyBtn = ImageButton(this).apply {
                     setImageResource(android.R.drawable.ic_menu_edit)
@@ -293,6 +295,7 @@ class MainActivity : AppCompatActivity() {
                             container.addView(TextView(context).apply {
                                 text = "تاریخچه خالی است"
                                 setTextColor(Color.BLACK)
+                                textSize = 16f
                             })
                         }
                         toast("حذف شد")
@@ -302,6 +305,7 @@ class MainActivity : AppCompatActivity() {
                 container.addView(row)
             }
         }
+
         val deleteAllBtn = Button(this).apply {
             text = "حذف همه 🗑️"
             setTextColor(Color.BLACK)
@@ -311,16 +315,20 @@ class MainActivity : AppCompatActivity() {
                 container.addView(TextView(context).apply {
                     text = "تاریخچه خالی است"
                     setTextColor(Color.BLACK)
+                    textSize = 16f
                 })
                 toast("همه حذف شدند")
             }
         }
         container.addView(deleteAllBtn)
-        val dialog = AlertDialog.Builder(lightContext)
+
+        // استفاده از تم روشن برای دیالوگ
+        val dialog = AlertDialog.Builder(this, android.R.style.Theme_Material_Light_Dialog_Alert)
             .setTitle("تاریخچه متون")
             .setView(ScrollView(this).apply { addView(container) })
             .setPositiveButton("بستن 🔚", null)
             .create()
+
         dialog.show()
         dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(Color.BLACK)
     }
