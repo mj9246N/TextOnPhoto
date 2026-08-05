@@ -121,22 +121,23 @@ class CanvasView @JvmOverloads constructor(
                 val segments = parseLine(line)
                 if (segments.isEmpty()) continue
 
-                val rtl = isRtl(segments.first().text)
-
+                // محاسبه عرض کل (بدون تغییر ترتیب)
                 var totalWidth = 0f
                 for (seg in segments) {
                     totalWidth += textPaint.measureText(seg.text)
                 }
 
-                val startX = getDrawStartX(totalWidth, anchorX)
-                var currentX = if (rtl) anchorX else startX
+                // نقطهٔ شروع بر اساس تراز – دیگر از RTL برای جابجایی استفاده نمی‌شود
+                var currentX = getDrawStartX(totalWidth, anchorX)
 
                 for (seg in segments) {
                     val segWidth = textPaint.measureText(seg.text)
-                    val left = if (rtl) currentX - segWidth else currentX
+                    val left = currentX
 
+                    // رسم متن
                     canvas.drawText(seg.text, left, anchorY + lineIdx * lineHeight, textPaint)
 
+                    // رسم خطوط
                     val rect = Rect()
                     textPaint.getTextBounds(seg.text, 0, seg.text.length, rect)
                     if (seg.underline || underline) {
@@ -158,7 +159,7 @@ class CanvasView @JvmOverloads constructor(
                         canvas.drawLine(left, lineY, left + segWidth, lineY, linePaint)
                     }
 
-                    currentX = if (rtl) left else left + segWidth
+                    currentX += segWidth
                 }
             }
 
