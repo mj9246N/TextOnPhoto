@@ -127,7 +127,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // دکمه‌های تراز – حالا با تابع جدید CanvasView
+        // دکمه‌های تراز
         btnAlignLeft.setOnClickListener {
             if (selectedIndex == -1) return@setOnClickListener
             val el = canvasView.elements[selectedIndex]
@@ -157,6 +157,19 @@ class MainActivity : AppCompatActivity() {
                 canvasView.setTextAlignment(el, CanvasView.TextAlignment.RIGHT)
                 updateUI()
             }
+        }
+
+        // دکمه جدید: مرکز بوم 🅰️
+        findViewById<Button>(R.id.btnCenterElement).setOnClickListener {
+            if (selectedIndex == -1) {
+                toast("ابتدا یک عنصر را انتخاب کنید")
+                return@setOnClickListener
+            }
+            val el = canvasView.elements[selectedIndex]
+            if (el.locked) { toast("قفل است"); return@setOnClickListener }
+            pushUndo()
+            canvasView.centerElement(el)
+            updateUI()
         }
 
         findViewById<Button>(R.id.btnRotateLeft).setOnClickListener { rotateSelected(-5f) }
@@ -195,8 +208,6 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnHistory).setOnClickListener { showHistoryDialog() }
         findViewById<Button>(R.id.btnTextLayers).setOnClickListener { showTextLayersDialog() }
     }
-
-    // تابع setTextAlignment حذف شد – مستقیماً از canvasView.setTextAlignment استفاده می‌کنیم.
 
     // ---------- لایه‌های متن ----------
     private fun showTextLayersDialog() {
@@ -366,7 +377,6 @@ class MainActivity : AppCompatActivity() {
         }
         layout.addView(guideText)
 
-        // اعداد دایره‌ای
         val numContainer = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         val hscroll = HorizontalScrollView(this)
         for (i in 1..50) {
@@ -406,7 +416,7 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton("انصراف", null).show()
     }
 
-    // ---------- ویرایش متن (مداد) با اعداد دایره‌ای و راهنما ----------
+    // ---------- ویرایش متن (مداد) ----------
     private fun showEditTextDialog(textEl: CanvasView.TextElement) {
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -430,7 +440,6 @@ class MainActivity : AppCompatActivity() {
         }
         layout.addView(guideText)
 
-        // اعداد دایره‌ای (۱ تا ۵۰)
         val numContainer = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         val hscroll = HorizontalScrollView(this)
         for (i in 1..50) {
