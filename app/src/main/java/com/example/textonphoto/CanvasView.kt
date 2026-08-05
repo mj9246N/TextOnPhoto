@@ -155,7 +155,7 @@ class CanvasView @JvmOverloads constructor(
                                 strokeWidth = 4f * scaleX
                                 style = Paint.Style.STROKE
                             }
-                            val lineY = anchorY + lineIdx * lineHeight - rect.height() * 1.2f - 8f * scaleX
+                            val lineY = anchorY + lineIdx * lineHeight - rect.height() * 1.0f - 4f * scaleX
                             canvas.drawLine(currentX, lineY, currentX + segWidth, lineY, linePaint)
                         }
                     }
@@ -183,7 +183,7 @@ class CanvasView @JvmOverloads constructor(
                                 strokeWidth = 4f * scaleX
                                 style = Paint.Style.STROKE
                             }
-                            val lineY = anchorY + lineIdx * lineHeight - rect.height() * 1.2f - 8f * scaleX
+                            val lineY = anchorY + lineIdx * lineHeight - rect.height() * 1.0f - 4f * scaleX
                             canvas.drawLine(currentX, lineY, currentX + segWidth, lineY, linePaint)
                         }
                         currentX += segWidth
