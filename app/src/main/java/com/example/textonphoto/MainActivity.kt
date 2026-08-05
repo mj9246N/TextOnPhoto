@@ -229,7 +229,7 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    // ---------- تاریخچه (اصلاح‌شده) ----------
+    // ---------- تاریخچه ----------
     private fun loadHistory() {
         if (historyFile.exists()) {
             historyTexts.clear()
@@ -259,9 +259,7 @@ class MainActivity : AppCompatActivity() {
             })
         } else {
             for (i in historyTexts.indices) {
-                // مهم‌ترین اصلاح: استفاده از متغیر با نام متفاوت برای جلوگیری از سایه
                 val historyItem = historyTexts[i]
-
                 val row = LinearLayout(this).apply {
                     orientation = LinearLayout.HORIZONTAL
                     layoutParams = LinearLayout.LayoutParams(
@@ -271,11 +269,10 @@ class MainActivity : AppCompatActivity() {
                     gravity = Gravity.CENTER_VERTICAL
                 }
                 val tv = AppCompatTextView(this).apply {
-                    text = historyItem  // اکنون مقدار واقعی را می‌گیرد
+                    text = historyItem
                     layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-                    textSize = 16f
-                    maxLines = 2
-                    setTextColor(Color.BLACK)   // تضمین رنگ سیاه
+                    textSize = 16f; maxLines = 2
+                    setTextColor(Color.BLACK)
                     setBackgroundColor(Color.TRANSPARENT)
                 }
                 val copyBtn = ImageButton(this).apply {
@@ -327,7 +324,7 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    // ---------- افزودن متن (با اعداد دایره‌ای) ----------
+    // ---------- افزودن متن (با اعداد دایره‌ای و راهنما) ----------
     private fun showAddTextDialog() {
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -338,6 +335,18 @@ class MainActivity : AppCompatActivity() {
             minLines = 3; hint = "متن خود را بنویسید"
         }
         layout.addView(editText)
+
+        // راهنمای جدید
+        val guideText = TextView(this).apply {
+            text = "§پایین§\n£بالا£"
+            textSize = 13f
+            setTextColor(Color.DKGRAY)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { topMargin = 8 }
+        }
+        layout.addView(guideText)
 
         // اعداد دایره‌ای
         val numContainer = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
@@ -379,7 +388,7 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton("انصراف", null).show()
     }
 
-    // ---------- ویرایش متن (مداد) با اعداد دایره‌ای ----------
+    // ---------- ویرایش متن (مداد) با اعداد دایره‌ای و راهنما ----------
     private fun showEditTextDialog(textEl: CanvasView.TextElement) {
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -392,7 +401,19 @@ class MainActivity : AppCompatActivity() {
         }
         layout.addView(editText)
 
-        // اعداد دایره‌ای (۱ تا ۵۰)
+        // راهنمای جدید
+        val guideText = TextView(this).apply {
+            text = "§پایین§\n£بالا£"
+            textSize = 13f
+            setTextColor(Color.DKGRAY)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { topMargin = 8 }
+        }
+        layout.addView(guideText)
+
+        // اعداد دایره‌ای
         val numContainer = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         val hscroll = HorizontalScrollView(this)
         for (i in 1..50) {
