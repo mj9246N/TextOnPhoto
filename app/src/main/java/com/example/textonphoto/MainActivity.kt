@@ -12,6 +12,7 @@ import android.view.*
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.AppCompatTextView
 import kotlinx.coroutines.*
 import java.io.File
 import kotlin.math.min
@@ -228,7 +229,7 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    // ---------- تاریخچه (دقیقاً شبیه لایه‌ها) ----------
+    // ---------- تاریخچه (اصلاح‌شده) ----------
     private fun loadHistory() {
         if (historyFile.exists()) {
             historyTexts.clear()
@@ -245,21 +246,22 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showHistoryDialog() {
-        // همان ساختار لایه‌ها برای تضمین رنگ سیاه
         val container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(8, 8, 8, 8)
-            setBackgroundColor(Color.WHITE)   // پس‌زمینه سفید کامل
+            setBackgroundColor(Color.WHITE)
         }
 
         if (historyTexts.isEmpty()) {
-            container.addView(TextView(this).apply {
+            container.addView(AppCompatTextView(this).apply {
                 text = "تاریخچه خالی است"
                 setTextColor(Color.BLACK)
             })
         } else {
             for (i in historyTexts.indices) {
-                var text = historyTexts[i]
+                // مهم‌ترین اصلاح: استفاده از متغیر با نام متفاوت برای جلوگیری از سایه
+                val historyItem = historyTexts[i]
+
                 val row = LinearLayout(this).apply {
                     orientation = LinearLayout.HORIZONTAL
                     layoutParams = LinearLayout.LayoutParams(
@@ -268,19 +270,19 @@ class MainActivity : AppCompatActivity() {
                     ).apply { setMargins(0, 4, 0, 4) }
                     gravity = Gravity.CENTER_VERTICAL
                 }
-                val tv = TextView(this).apply {
-                    text = text
+                val tv = AppCompatTextView(this).apply {
+                    text = historyItem  // اکنون مقدار واقعی را می‌گیرد
                     layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
                     textSize = 16f
                     maxLines = 2
-                    setTextColor(Color.BLACK)   // فقط رنگ مشکی
+                    setTextColor(Color.BLACK)   // تضمین رنگ سیاه
                     setBackgroundColor(Color.TRANSPARENT)
                 }
                 val copyBtn = ImageButton(this).apply {
                     setImageResource(android.R.drawable.ic_menu_edit)
                     setOnClickListener {
                         (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
-                            .setPrimaryClip(ClipData.newPlainText("text", text))
+                            .setPrimaryClip(ClipData.newPlainText("text", historyItem))
                         toast("کپی شد")
                     }
                 }
@@ -291,7 +293,7 @@ class MainActivity : AppCompatActivity() {
                         container.removeView(row)
                         if (historyTexts.isEmpty()) {
                             container.removeAllViews()
-                            container.addView(TextView(context).apply {
+                            container.addView(AppCompatTextView(context).apply {
                                 text = "تاریخچه خالی است"
                                 setTextColor(Color.BLACK)
                             })
@@ -309,7 +311,7 @@ class MainActivity : AppCompatActivity() {
             setOnClickListener {
                 historyTexts.clear(); saveHistory()
                 container.removeAllViews()
-                container.addView(TextView(context).apply {
+                container.addView(AppCompatTextView(context).apply {
                     text = "تاریخچه خالی است"
                     setTextColor(Color.BLACK)
                 })
