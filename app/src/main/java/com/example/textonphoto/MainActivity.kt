@@ -269,7 +269,9 @@ class MainActivity : AppCompatActivity() {
                 val tv = TextView(this).apply {
                     text = text
                     layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-                    textSize = 16f; maxLines = 2; setTextColor(Color.BLACK)
+                    textSize = 16f; maxLines = 2
+                    setTextColor(Color.BLACK)
+                    setBackgroundColor(Color.TRANSPARENT)
                 }
                 val copyBtn = ImageButton(this).apply {
                     setImageResource(android.R.drawable.ic_menu_edit)
