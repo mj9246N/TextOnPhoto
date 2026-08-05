@@ -65,16 +65,16 @@ class CanvasView @JvmOverloads constructor(
             var i = 0
             while (i < line.length) {
                 val c = line[i]
-                if (c == '۷') {
-                    val endIdx = line.indexOf('۷', i + 1)
+                if (c == '§') {                     // زیرخط
+                    val endIdx = line.indexOf('§', i + 1)
                     if (endIdx != -1) {
                         val inner = line.substring(i + 1, endIdx)
                         segments.add(TextSegment(inner, underline = true))
                         i = endIdx + 1
                         continue
                     }
-                } else if (c == '۶') {
-                    val endIdx = line.indexOf('۶', i + 1)
+                } else if (c == '£') {              // خط بالا
+                    val endIdx = line.indexOf('£', i + 1)
                     if (endIdx != -1) {
                         val inner = line.substring(i + 1, endIdx)
                         segments.add(TextSegment(inner, overline = true))
@@ -83,7 +83,7 @@ class CanvasView @JvmOverloads constructor(
                     }
                 }
                 val sb = StringBuilder()
-                while (i < line.length && line[i] != '۷' && line[i] != '۶') {
+                while (i < line.length && line[i] != '§' && line[i] != '£') {
                     sb.append(line[i])
                     i++
                 }
