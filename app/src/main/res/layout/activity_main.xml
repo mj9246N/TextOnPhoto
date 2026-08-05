@@ -34,7 +34,7 @@
         android:elevation="4dp"
         app:layout_constraintBottom_toBottomOf="parent">
 
-        <!-- ردیف 1: افزودن، ویرایش، کپی، حذف -->
+        <!-- ردیف ۱: افزودن، ویرایش، کپی، حذف -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -44,29 +44,29 @@
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnAddText"
                 style="@style/Widget.MaterialComponents.Button"
-                android:layout_width="0dp" android:layout_height="44dp" android:layout_weight="1"
-                android:text="متن جدید" android:textSize="13sp" android:layout_marginHorizontal="1dp" />
+                android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1"
+                android:text="متن جدید" android:textSize="14sp" android:layout_marginHorizontal="1dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnEdit"
                 style="@style/Widget.MaterialComponents.Button"
-                android:layout_width="0dp" android:layout_height="44dp" android:layout_weight="1"
-                android:text="✏️" android:textSize="13sp" android:layout_marginHorizontal="1dp" />
+                android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1"
+                android:text="✏️" android:textSize="14sp" android:layout_marginHorizontal="1dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnCopy"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="0dp" android:layout_height="44dp" android:layout_weight="1"
-                android:text="کپی" android:textSize="13sp" android:layout_marginHorizontal="1dp" />
+                android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1"
+                android:text="کپی" android:textSize="14sp" android:layout_marginHorizontal="1dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnDelete"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="0dp" android:layout_height="44dp" android:layout_weight="1"
-                android:text="حذف" android:textSize="13sp" android:layout_marginHorizontal="1dp" />
+                android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1"
+                android:text="حذف" android:textSize="14sp" android:layout_marginHorizontal="1dp" />
         </LinearLayout>
 
-        <!-- ردیف 2: رنگ، زیرخط، تراز -->
+        <!-- ردیف ۲: رنگ، زیرخط، تراز -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -76,38 +76,39 @@
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnColor"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="0dp" android:layout_height="44dp" android:layout_weight="1"
-                android:text="رنگ" android:textSize="13sp" android:layout_marginHorizontal="1dp" />
+                android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1"
+                android:text="رنگ" android:textSize="14sp" android:layout_marginHorizontal="1dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnStyle"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="0dp" android:layout_height="44dp" android:layout_weight="1"
-                android:text="زیرخط" android:textSize="13sp" android:layout_marginHorizontal="1dp" />
+                android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1"
+                android:text="زیرخط" android:textSize="14sp" android:layout_marginHorizontal="1dp" />
 
+            <!-- دکمه‌های تراز بزرگ‌تر -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnAlignLeft"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="36dp" android:layout_height="44dp"
-                android:text="L" android:textSize="14sp" android:layout_marginHorizontal="1dp"
+                android:layout_width="48dp" android:layout_height="48dp"
+                android:text="L" android:textSize="18sp" android:layout_marginHorizontal="1dp"
                 app:cornerRadius="8dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnAlignCenter"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="36dp" android:layout_height="44dp"
-                android:text="C" android:textSize="14sp" android:layout_marginHorizontal="1dp"
+                android:layout_width="48dp" android:layout_height="48dp"
+                android:text="C" android:textSize="18sp" android:layout_marginHorizontal="1dp"
                 app:cornerRadius="8dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnAlignRight"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="36dp" android:layout_height="44dp"
-                android:text="R" android:textSize="14sp" android:layout_marginHorizontal="1dp"
+                android:layout_width="48dp" android:layout_height="48dp"
+                android:text="R" android:textSize="18sp" android:layout_marginHorizontal="1dp"
                 app:cornerRadius="8dp" />
         </LinearLayout>
 
-        <!-- ردیف 3: چرخش و اندازه (ایموجی جدید) -->
+        <!-- ردیف ۳: چرخش و اندازه -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -117,47 +118,47 @@
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnRotateLeft"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="44dp" android:layout_height="44dp"
-                android:text="↖️" android:textSize="18sp"
-                android:layout_marginEnd="2dp" app:cornerRadius="22dp" />
+                android:layout_width="52dp" android:layout_height="52dp"
+                android:text="↖️" android:textSize="22sp"
+                android:layout_marginEnd="2dp" app:cornerRadius="26dp" />
 
             <TextView
                 android:id="@+id/tvRotation"
-                android:layout_width="wrap_content" android:layout_height="44dp"
-                android:gravity="center" android:minWidth="40dp"
-                android:text="0°" android:textSize="14sp" />
+                android:layout_width="wrap_content" android:layout_height="48dp"
+                android:gravity="center" android:minWidth="48dp"
+                android:text="0°" android:textSize="16sp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnRotateRight"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="44dp" android:layout_height="44dp"
-                android:text="↗️" android:textSize="18sp"
-                android:layout_marginStart="2dp" app:cornerRadius="22dp" />
+                android:layout_width="52dp" android:layout_height="52dp"
+                android:text="↗️" android:textSize="22sp"
+                android:layout_marginStart="2dp" app:cornerRadius="26dp" />
 
             <View android:layout_width="8dp" android:layout_height="0dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnZoomOut"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="44dp" android:layout_height="44dp"
-                android:text="🔙" android:textSize="18sp"
-                android:layout_marginEnd="2dp" app:cornerRadius="22dp" />
+                android:layout_width="52dp" android:layout_height="52dp"
+                android:text="🔙" android:textSize="22sp"
+                android:layout_marginEnd="2dp" app:cornerRadius="26dp" />
 
             <TextView
                 android:id="@+id/tvSize"
-                android:layout_width="wrap_content" android:layout_height="44dp"
-                android:gravity="center" android:minWidth="40dp"
-                android:text="60" android:textSize="14sp" android:textStyle="bold" />
+                android:layout_width="wrap_content" android:layout_height="48dp"
+                android:gravity="center" android:minWidth="48dp"
+                android:text="60" android:textSize="16sp" android:textStyle="bold" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnZoomIn"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="44dp" android:layout_height="44dp"
-                android:text="🔝" android:textSize="18sp"
-                android:layout_marginStart="2dp" app:cornerRadius="22dp" />
+                android:layout_width="52dp" android:layout_height="52dp"
+                android:text="🔝" android:textSize="22sp"
+                android:layout_marginStart="2dp" app:cornerRadius="26dp" />
         </LinearLayout>
 
-        <!-- ردیف 4: برچسب، قفل، برگشت، ذخیره -->
+        <!-- ردیف ۴: برچسب، قفل، برگشت، ذخیره -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -167,29 +168,29 @@
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnSticker"
                 style="@style/Widget.MaterialComponents.Button"
-                android:layout_width="0dp" android:layout_height="44dp" android:layout_weight="1"
-                android:text="برچسب" android:textSize="13sp" android:layout_marginHorizontal="1dp" />
+                android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1"
+                android:text="برچسب" android:textSize="14sp" android:layout_marginHorizontal="1dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnLock"
                 style="@style/Widget.MaterialComponents.Button"
-                android:layout_width="0dp" android:layout_height="44dp" android:layout_weight="1"
-                android:text="قفل" android:textSize="13sp" android:layout_marginHorizontal="1dp" />
+                android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1"
+                android:text="قفل" android:textSize="14sp" android:layout_marginHorizontal="1dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnUndo"
                 style="@style/Widget.MaterialComponents.Button"
-                android:layout_width="0dp" android:layout_height="44dp" android:layout_weight="1"
-                android:text="↩️" android:textSize="13sp" android:layout_marginHorizontal="1dp" />
+                android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1"
+                android:text="↩️" android:textSize="14sp" android:layout_marginHorizontal="1dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnSave"
                 style="@style/Widget.MaterialComponents.Button"
-                android:layout_width="0dp" android:layout_height="44dp" android:layout_weight="1"
-                android:text="ذخیره" android:textSize="13sp" android:layout_marginHorizontal="1dp" />
+                android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1"
+                android:text="ذخیره" android:textSize="14sp" android:layout_marginHorizontal="1dp" />
         </LinearLayout>
 
-        <!-- ردیف 5: تاریخچه و لایه‌های متن -->
+        <!-- ردیف ۵: تاریخچه و لایه‌های متن -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -199,14 +200,14 @@
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnHistory"
                 style="@style/Widget.MaterialComponents.Button.TextButton"
-                android:layout_width="0dp" android:layout_height="44dp" android:layout_weight="1"
-                android:text="تاریخچه" android:textSize="13sp" android:layout_marginHorizontal="1dp" />
+                android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1"
+                android:text="تاریخچه" android:textSize="14sp" android:layout_marginHorizontal="1dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnTextLayers"
                 style="@style/Widget.MaterialComponents.Button.TextButton"
-                android:layout_width="0dp" android:layout_height="44dp" android:layout_weight="1"
-                android:text="لایه‌های متن" android:textSize="13sp" android:layout_marginHorizontal="1dp" />
+                android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1"
+                android:text="لایه‌های متن" android:textSize="14sp" android:layout_marginHorizontal="1dp" />
         </LinearLayout>
     </LinearLayout>
 
