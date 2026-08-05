@@ -321,7 +321,7 @@ class MainActivity : AppCompatActivity() {
         dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(Color.BLACK)
     }
 
-    // ---------- افزودن متن (بدون راهنما) ----------
+    // ---------- افزودن متن (با اعداد دایره‌ای) ----------
     private fun showAddTextDialog() {
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -373,16 +373,44 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton("انصراف", null).show()
     }
 
-    // ---------- ویرایش متن (مداد) بدون راهنما ----------
+    // ---------- ویرایش متن (مداد) با اعداد دایره‌ای ----------
     private fun showEditTextDialog(textEl: CanvasView.TextElement) {
+        val layout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(16, 16, 16, 16)
+        }
         val editText = EditText(this).apply {
             setText(textEl.text)
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
             minLines = 3
         }
+        layout.addView(editText)
+
+        // اعداد دایره‌ای (۱ تا ۵۰)
+        val numContainer = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        val hscroll = HorizontalScrollView(this)
+        for (i in 1..50) {
+            val btn = TextView(this).apply {
+                text = getCircledNumber(i)
+                background = getDrawable(R.drawable.circle_number_bg)
+                gravity = Gravity.CENTER
+                val size = (44 * resources.displayMetrics.density).toInt()
+                width = size; height = size; textSize = 16f
+                setOnClickListener {
+                    val s = maxOf(editText.selectionStart, 0)
+                    val e = maxOf(editText.selectionEnd, 0)
+                    editText.text.replace(s, e, text)
+                    editText.setSelection(s + text.length)
+                }
+            }
+            numContainer.addView(btn)
+        }
+        hscroll.addView(numContainer)
+        layout.addView(hscroll)
+
         AlertDialog.Builder(this)
             .setTitle("ویرایش متن")
-            .setView(editText)
+            .setView(layout)
             .setPositiveButton("ذخیره") { _, _ ->
                 val newText = editText.text.toString().trim()
                 if (newText.isNotEmpty()) {
