@@ -23,7 +23,6 @@
             android:background="@android:color/white" />
     </FrameLayout>
 
-    <!-- پنل دکمه‌های پایین -->
     <LinearLayout
         android:id="@+id/buttonPanel"
         android:layout_width="match_parent"
@@ -33,11 +32,9 @@
         android:padding="4dp"
         android:background="#FAFAFA"
         android:elevation="4dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintBottom_toBottomOf="parent">
 
-        <!-- ردیف ۱: افزودن، ویرایش، کپی، حذف -->
+        <!-- ردیف 1: افزودن، ویرایش، کپی، حذف -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -69,7 +66,7 @@
                 android:text="حذف" android:textSize="13sp" android:layout_marginHorizontal="1dp" />
         </LinearLayout>
 
-        <!-- ردیف ۲: رنگ، استایل، و دکمه‌های تراز (L, C, R) -->
+        <!-- ردیف 2: رنگ، زیرخط، تراز -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -88,7 +85,6 @@
                 android:layout_width="0dp" android:layout_height="44dp" android:layout_weight="1"
                 android:text="زیرخط" android:textSize="13sp" android:layout_marginHorizontal="1dp" />
 
-            <!-- دکمه‌های تراز -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnAlignLeft"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
@@ -111,7 +107,7 @@
                 app:cornerRadius="8dp" />
         </LinearLayout>
 
-        <!-- ردیف ۳: چرخش و اندازه -->
+        <!-- ردیف 3: چرخش و اندازه (ایموجی جدید) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -122,7 +118,7 @@
                 android:id="@+id/btnRotateLeft"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="44dp" android:layout_height="44dp"
-                android:text="↺" android:textSize="18sp"
+                android:text="↖️" android:textSize="18sp"
                 android:layout_marginEnd="2dp" app:cornerRadius="22dp" />
 
             <TextView
@@ -135,7 +131,7 @@
                 android:id="@+id/btnRotateRight"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="44dp" android:layout_height="44dp"
-                android:text="↻" android:textSize="18sp"
+                android:text="↗️" android:textSize="18sp"
                 android:layout_marginStart="2dp" app:cornerRadius="22dp" />
 
             <View android:layout_width="8dp" android:layout_height="0dp" />
@@ -144,7 +140,7 @@
                 android:id="@+id/btnZoomOut"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="44dp" android:layout_height="44dp"
-                android:text="−" android:textSize="18sp"
+                android:text="🔙" android:textSize="18sp"
                 android:layout_marginEnd="2dp" app:cornerRadius="22dp" />
 
             <TextView
@@ -157,11 +153,11 @@
                 android:id="@+id/btnZoomIn"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="44dp" android:layout_height="44dp"
-                android:text="+" android:textSize="18sp"
+                android:text="🔝" android:textSize="18sp"
                 android:layout_marginStart="2dp" app:cornerRadius="22dp" />
         </LinearLayout>
 
-        <!-- ردیف ۴: برچسب، قفل، برگشت، ذخیره -->
+        <!-- ردیف 4: برچسب، قفل، برگشت، ذخیره -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -193,7 +189,7 @@
                 android:text="ذخیره" android:textSize="13sp" android:layout_marginHorizontal="1dp" />
         </LinearLayout>
 
-        <!-- ردیف ۵: تاریخچه و لایه‌های متن -->
+        <!-- ردیف 5: تاریخچه و لایه‌های متن -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
