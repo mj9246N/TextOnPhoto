@@ -127,9 +127,37 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        btnAlignLeft.setOnClickListener { setTextAlignment(CanvasView.TextAlignment.LEFT) }
-        btnAlignCenter.setOnClickListener { setTextAlignment(CanvasView.TextAlignment.CENTER) }
-        btnAlignRight.setOnClickListener { setTextAlignment(CanvasView.TextAlignment.RIGHT) }
+        // دکمه‌های تراز – حالا با تابع جدید CanvasView
+        btnAlignLeft.setOnClickListener {
+            if (selectedIndex == -1) return@setOnClickListener
+            val el = canvasView.elements[selectedIndex]
+            if (el is CanvasView.TextElement) {
+                if (el.locked) { toast("قفل است"); return@setOnClickListener }
+                pushUndo()
+                canvasView.setTextAlignment(el, CanvasView.TextAlignment.LEFT)
+                updateUI()
+            }
+        }
+        btnAlignCenter.setOnClickListener {
+            if (selectedIndex == -1) return@setOnClickListener
+            val el = canvasView.elements[selectedIndex]
+            if (el is CanvasView.TextElement) {
+                if (el.locked) { toast("قفل است"); return@setOnClickListener }
+                pushUndo()
+                canvasView.setTextAlignment(el, CanvasView.TextAlignment.CENTER)
+                updateUI()
+            }
+        }
+        btnAlignRight.setOnClickListener {
+            if (selectedIndex == -1) return@setOnClickListener
+            val el = canvasView.elements[selectedIndex]
+            if (el is CanvasView.TextElement) {
+                if (el.locked) { toast("قفل است"); return@setOnClickListener }
+                pushUndo()
+                canvasView.setTextAlignment(el, CanvasView.TextAlignment.RIGHT)
+                updateUI()
+            }
+        }
 
         findViewById<Button>(R.id.btnRotateLeft).setOnClickListener { rotateSelected(-5f) }
         findViewById<Button>(R.id.btnRotateRight).setOnClickListener { rotateSelected(5f) }
@@ -168,16 +196,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnTextLayers).setOnClickListener { showTextLayersDialog() }
     }
 
-    private fun setTextAlignment(align: CanvasView.TextAlignment) {
-        if (selectedIndex == -1) return
-        val el = canvasView.elements[selectedIndex]
-        if (el is CanvasView.TextElement) {
-            if (el.locked) { toast("قفل است"); return }
-            pushUndo()
-            el.alignment = align
-            canvasView.invalidate()
-        }
-    }
+    // تابع setTextAlignment حذف شد – مستقیماً از canvasView.setTextAlignment استفاده می‌کنیم.
 
     // ---------- لایه‌های متن ----------
     private fun showTextLayersDialog() {
@@ -336,7 +355,6 @@ class MainActivity : AppCompatActivity() {
         }
         layout.addView(editText)
 
-        // راهنمای جدید
         val guideText = TextView(this).apply {
             text = "§پایین§\n£بالا£"
             textSize = 13f
@@ -401,7 +419,6 @@ class MainActivity : AppCompatActivity() {
         }
         layout.addView(editText)
 
-        // راهنمای جدید
         val guideText = TextView(this).apply {
             text = "§پایین§\n£بالا£"
             textSize = 13f
@@ -413,7 +430,7 @@ class MainActivity : AppCompatActivity() {
         }
         layout.addView(guideText)
 
-        // اعداد دایره‌ای
+        // اعداد دایره‌ای (۱ تا ۵۰)
         val numContainer = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         val hscroll = HorizontalScrollView(this)
         for (i in 1..50) {
