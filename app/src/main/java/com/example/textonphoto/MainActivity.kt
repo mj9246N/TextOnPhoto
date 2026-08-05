@@ -31,7 +31,6 @@ class MainActivity : AppCompatActivity() {
     private val undoStack = mutableListOf<List<CanvasView.CanvasElement>>()
     private val MAX_UNDO = 100
 
-    // تاریخچه پایدار
     private val historyFile by lazy { File(filesDir, "history.txt") }
     private val historyTexts = mutableListOf<String>()
 
@@ -197,12 +196,15 @@ class MainActivity : AppCompatActivity() {
             for ((i, el) in textElements.withIndex()) {
                 val row = LinearLayout(this).apply {
                     orientation = LinearLayout.HORIZONTAL
-                    layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { setMargins(0, 4, 0, 4) }
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).apply { setMargins(0, 4, 0, 4) }
                     gravity = Gravity.CENTER_VERTICAL
                 }
                 val preview = TextView(this).apply {
                     text = el.getPreview()
-                    layoutParams = LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f)
+                    layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
                     textSize = 16f; setTextColor(Color.BLACK)
                 }
                 val editBtn = ImageButton(this).apply {
@@ -261,15 +263,18 @@ class MainActivity : AppCompatActivity() {
             })
         } else {
             for (i in historyTexts.indices) {
-                val text = historyTexts[i]
+                var text = historyTexts[i]  // var به جای val
                 val row = LinearLayout(this).apply {
                     orientation = LinearLayout.HORIZONTAL
-                    layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { setMargins(0, 4, 0, 4) }
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).apply { setMargins(0, 4, 0, 4) }
                     gravity = Gravity.CENTER_VERTICAL
                 }
                 val tv = TextView(this).apply {
                     text = text
-                    layoutParams = LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f)
+                    layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
                     textSize = 16f; maxLines = 2; setTextColor(Color.BLACK)
                 }
                 val copyBtn = ImageButton(this).apply {
@@ -337,16 +342,17 @@ class MainActivity : AppCompatActivity() {
         }
         layout.addView(editText)
 
-        // راهنما برای قابلیت ۷...۷
         val guideText = TextView(this).apply {
             text = "برای زیرخط‌دار کردن یک کلمه، آن را بین دو علامت «۷» قرار دهید\nمثال: سلام۷علی۷ بچه"
             textSize = 13f
             setTextColor(Color.DKGRAY)
-            layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { topMargin = 8 }
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { topMargin = 8 }
         }
         layout.addView(guideText)
 
-        // اعداد دایره‌ای
         val numContainer = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         val hscroll = HorizontalScrollView(this)
         for (i in 1..50) {
@@ -394,18 +400,20 @@ class MainActivity : AppCompatActivity() {
             setPadding(16, 16, 16, 16)
         }
         val editText = EditText(this).apply {
-            setText(textEl.text)   // متن خام با ۷ها
+            setText(textEl.text)
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
             minLines = 3
         }
         layout.addView(editText)
 
-        // راهنما
         val guideText = TextView(this).apply {
             text = "برای زیرخط‌دار کردن یک کلمه، آن را بین دو علامت «۷» قرار دهید\nمثال: سلام۷علی۷ بچه"
             textSize = 13f
             setTextColor(Color.DKGRAY)
-            layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { topMargin = 8 }
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { topMargin = 8 }
         }
         layout.addView(guideText)
 
@@ -416,7 +424,7 @@ class MainActivity : AppCompatActivity() {
                 val newText = editText.text.toString().trim()
                 if (newText.isNotEmpty()) {
                     pushUndo()
-                    textEl.text = newText   // ذخیره با ۷ها
+                    textEl.text = newText
                     canvasView.invalidate()
                     addToHistory(newText)
                 }
