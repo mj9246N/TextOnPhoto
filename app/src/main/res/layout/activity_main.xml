@@ -66,7 +66,7 @@
                 android:text="حذف" android:textSize="14sp" android:layout_marginHorizontal="1dp" />
         </LinearLayout>
 
-        <!-- ردیف ۲: رنگ، زیرخط، تراز -->
+        <!-- ردیف ۲: رنگ، زیرخط، تراز + 🅰️ -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -85,7 +85,6 @@
                 android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1"
                 android:text="زیرخط" android:textSize="14sp" android:layout_marginHorizontal="1dp" />
 
-            <!-- دکمه‌های تراز با استایل TextButton (شفاف و هماهنگ) -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnAlignLeft"
                 style="@style/Widget.MaterialComponents.Button.TextButton"
@@ -112,9 +111,19 @@
                 android:layout_marginHorizontal="1dp" app:cornerRadius="24dp"
                 android:minWidth="0dp" android:minHeight="0dp" android:padding="0dp"
                 android:insetLeft="0dp" android:insetRight="0dp" />
+
+            <!-- دکمه جدید مرکز بوم -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCenterElement"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="48dp" android:layout_height="48dp"
+                android:text="🅰️" android:textSize="20sp"
+                android:layout_marginStart="2dp" app:cornerRadius="24dp"
+                android:minWidth="0dp" android:minHeight="0dp" android:padding="0dp"
+                android:insetLeft="0dp" android:insetRight="0dp" />
         </LinearLayout>
 
-        <!-- ردیف ۳: چرخش و اندازه (حالا دقیقاً 48dp مثل ↩️) -->
+        <!-- ردیف ۳: چرخش و اندازه -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -126,8 +135,7 @@
                 style="@style/Widget.MaterialComponents.Button.TextButton"
                 android:layout_width="48dp" android:layout_height="48dp"
                 android:text="↖️" android:textSize="20sp"
-                android:layout_marginEnd="2dp"
-                app:cornerRadius="24dp"
+                android:layout_marginEnd="2dp" app:cornerRadius="24dp"
                 android:minWidth="0dp" android:minHeight="0dp" android:padding="0dp"
                 android:insetLeft="0dp" android:insetRight="0dp" />
 
@@ -142,8 +150,7 @@
                 style="@style/Widget.MaterialComponents.Button.TextButton"
                 android:layout_width="48dp" android:layout_height="48dp"
                 android:text="↗️" android:textSize="20sp"
-                android:layout_marginStart="2dp"
-                app:cornerRadius="24dp"
+                android:layout_marginStart="2dp" app:cornerRadius="24dp"
                 android:minWidth="0dp" android:minHeight="0dp" android:padding="0dp"
                 android:insetLeft="0dp" android:insetRight="0dp" />
 
@@ -154,8 +161,7 @@
                 style="@style/Widget.MaterialComponents.Button.TextButton"
                 android:layout_width="48dp" android:layout_height="48dp"
                 android:text="🔙" android:textSize="20sp"
-                android:layout_marginEnd="2dp"
-                app:cornerRadius="24dp"
+                android:layout_marginEnd="2dp" app:cornerRadius="24dp"
                 android:minWidth="0dp" android:minHeight="0dp" android:padding="0dp"
                 android:insetLeft="0dp" android:insetRight="0dp" />
 
@@ -170,8 +176,7 @@
                 style="@style/Widget.MaterialComponents.Button.TextButton"
                 android:layout_width="48dp" android:layout_height="48dp"
                 android:text="🔝" android:textSize="20sp"
-                android:layout_marginStart="2dp"
-                app:cornerRadius="24dp"
+                android:layout_marginStart="2dp" app:cornerRadius="24dp"
                 android:minWidth="0dp" android:minHeight="0dp" android:padding="0dp"
                 android:insetLeft="0dp" android:insetRight="0dp" />
         </LinearLayout>
