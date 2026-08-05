@@ -85,7 +85,7 @@
                 android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1"
                 android:text="زیرخط" android:textSize="14sp" android:layout_marginHorizontal="1dp" />
 
-            <!-- دکمه‌های تراز با استایل TextButton (شفاف) -->
+            <!-- دکمه‌های تراز با استایل TextButton (شفاف و هماهنگ) -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnAlignLeft"
                 style="@style/Widget.MaterialComponents.Button.TextButton"
@@ -114,7 +114,7 @@
                 android:insetLeft="0dp" android:insetRight="0dp" />
         </LinearLayout>
 
-        <!-- ردیف ۳: چرخش و اندازه (دکمه‌های کاملاً شفاف و ایموجی کامل) -->
+        <!-- ردیف ۳: چرخش و اندازه (حالا دقیقاً 48dp مثل ↩️) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -124,10 +124,10 @@
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnRotateLeft"
                 style="@style/Widget.MaterialComponents.Button.TextButton"
-                android:layout_width="56dp" android:layout_height="56dp"
-                android:text="↖️" android:textSize="28sp"
+                android:layout_width="48dp" android:layout_height="48dp"
+                android:text="↖️" android:textSize="20sp"
                 android:layout_marginEnd="2dp"
-                app:cornerRadius="28dp"
+                app:cornerRadius="24dp"
                 android:minWidth="0dp" android:minHeight="0dp" android:padding="0dp"
                 android:insetLeft="0dp" android:insetRight="0dp" />
 
@@ -140,10 +140,10 @@
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnRotateRight"
                 style="@style/Widget.MaterialComponents.Button.TextButton"
-                android:layout_width="56dp" android:layout_height="56dp"
-                android:text="↗️" android:textSize="28sp"
+                android:layout_width="48dp" android:layout_height="48dp"
+                android:text="↗️" android:textSize="20sp"
                 android:layout_marginStart="2dp"
-                app:cornerRadius="28dp"
+                app:cornerRadius="24dp"
                 android:minWidth="0dp" android:minHeight="0dp" android:padding="0dp"
                 android:insetLeft="0dp" android:insetRight="0dp" />
 
@@ -152,10 +152,10 @@
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnZoomOut"
                 style="@style/Widget.MaterialComponents.Button.TextButton"
-                android:layout_width="56dp" android:layout_height="56dp"
-                android:text="🔙" android:textSize="28sp"
+                android:layout_width="48dp" android:layout_height="48dp"
+                android:text="🔙" android:textSize="20sp"
                 android:layout_marginEnd="2dp"
-                app:cornerRadius="28dp"
+                app:cornerRadius="24dp"
                 android:minWidth="0dp" android:minHeight="0dp" android:padding="0dp"
                 android:insetLeft="0dp" android:insetRight="0dp" />
 
@@ -168,10 +168,10 @@
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnZoomIn"
                 style="@style/Widget.MaterialComponents.Button.TextButton"
-                android:layout_width="56dp" android:layout_height="56dp"
-                android:text="🔝" android:textSize="28sp"
+                android:layout_width="48dp" android:layout_height="48dp"
+                android:text="🔝" android:textSize="20sp"
                 android:layout_marginStart="2dp"
-                app:cornerRadius="28dp"
+                app:cornerRadius="24dp"
                 android:minWidth="0dp" android:minHeight="0dp" android:padding="0dp"
                 android:insetLeft="0dp" android:insetRight="0dp" />
         </LinearLayout>
