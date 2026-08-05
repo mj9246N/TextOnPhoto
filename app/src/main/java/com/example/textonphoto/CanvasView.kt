@@ -61,11 +61,9 @@ class CanvasView @JvmOverloads constructor(
             }
         }
 
-        // تغییر از private به internal
         internal fun parseLine(line: String): List<TextSegment> {
             val segments = mutableListOf<TextSegment>()
             var i = 0
-            val sb = StringBuilder()
             while (i < line.length) {
                 val c = line[i]
                 if (c == '۷') {
@@ -85,11 +83,16 @@ class CanvasView @JvmOverloads constructor(
                         continue
                     }
                 }
-                sb.append(c)
-                i++
-            }
-            if (sb.isNotEmpty()) {
-                segments.add(TextSegment(sb.toString()))
+                // else normal character
+                val sb = StringBuilder()
+                while (i < line.length && line[i] != '۷' && line[i] != '۶') {
+                    sb.append(line[i])
+                    i++
+                }
+                if (sb.isNotEmpty()) {
+                    segments.add(TextSegment(sb.toString()))
+                }
+                // i is already at the next marker or end
             }
             return segments
         }
@@ -121,81 +124,45 @@ class CanvasView @JvmOverloads constructor(
                 val segments = parseLine(line)
                 if (segments.isEmpty()) continue
 
-                val firstSegText = segments.first().text
-                val rtl = isRtl(firstSegText)
+                val rtl = isRtl(segments.first().text)
 
-                // بازسازی ترتیب بر اساس جهت
-                val visualOrder = if (rtl) segments.reversed() else segments.toList()
-
-                // محاسبه عرض کل
+                // محاسبه عرض کل بدون تغییر ترتیب
                 var totalWidth = 0f
-                for (seg in visualOrder) {
+                for (seg in segments) {
                     totalWidth += textPaint.measureText(seg.text)
                 }
 
                 val startX = getDrawStartX(totalWidth, anchorX)
+                var currentX = if (rtl) anchorX else startX
 
-                var currentX = startX
-                if (rtl) {
-                    // برای متن‌های راست‌به‌چپ: از سمت راست (anchorX) شروع می‌کنیم
-                    currentX = anchorX
-                    for (seg in visualOrder) {
-                        val segWidth = textPaint.measureText(seg.text)
-                        val left = currentX - segWidth
-                        // رسم متن – بدون textDirection
-                        canvas.drawText(seg.text, left, anchorY + lineIdx * lineHeight, textPaint)
+                for (seg in segments) {
+                    val segWidth = textPaint.measureText(seg.text)
+                    val left = if (rtl) currentX - segWidth else currentX
 
-                        // رسم خطوط
-                        val rect = Rect()
-                        textPaint.getTextBounds(seg.text, 0, seg.text.length, rect)
-                        if (seg.underline || underline) {
-                            val linePaint = Paint().apply {
-                                color = this@TextElement.color
-                                strokeWidth = 4f * scaleX
-                                style = Paint.Style.STROKE
-                            }
-                            val lineY = anchorY + lineIdx * lineHeight + rect.height() * 0.35f
-                            canvas.drawLine(left, lineY, left + segWidth, lineY, linePaint)
+                    canvas.drawText(seg.text, left, anchorY + lineIdx * lineHeight, textPaint)
+
+                    val rect = Rect()
+                    textPaint.getTextBounds(seg.text, 0, seg.text.length, rect)
+                    if (seg.underline || underline) {
+                        val linePaint = Paint().apply {
+                            color = this@TextElement.color
+                            strokeWidth = 4f * scaleX
+                            style = Paint.Style.STROKE
                         }
-                        if (seg.overline) {
-                            val linePaint = Paint().apply {
-                                color = this@TextElement.color
-                                strokeWidth = 4f * scaleX
-                                style = Paint.Style.STROKE
-                            }
-                            val lineY = anchorY + lineIdx * lineHeight - rect.height() * 1.0f - 4f * scaleX
-                            canvas.drawLine(left, lineY, left + segWidth, lineY, linePaint)
-                        }
-                        currentX = left
+                        val lineY = anchorY + lineIdx * lineHeight + rect.height() * 0.35f
+                        canvas.drawLine(left, lineY, left + segWidth, lineY, linePaint)
                     }
-                } else {
-                    // متن‌های چپ‌به‌راست (انگلیسی)
-                    for (seg in visualOrder) {
-                        val segWidth = textPaint.measureText(seg.text)
-                        val left = currentX
-                        canvas.drawText(seg.text, left, anchorY + lineIdx * lineHeight, textPaint)
-                        val rect = Rect()
-                        textPaint.getTextBounds(seg.text, 0, seg.text.length, rect)
-                        if (seg.underline || underline) {
-                            val linePaint = Paint().apply {
-                                color = this@TextElement.color
-                                strokeWidth = 4f * scaleX
-                                style = Paint.Style.STROKE
-                            }
-                            val lineY = anchorY + lineIdx * lineHeight + rect.height() * 0.35f
-                            canvas.drawLine(left, lineY, left + segWidth, lineY, linePaint)
+                    if (seg.overline) {
+                        val linePaint = Paint().apply {
+                            color = this@TextElement.color
+                            strokeWidth = 4f * scaleX
+                            style = Paint.Style.STROKE
                         }
-                        if (seg.overline) {
-                            val linePaint = Paint().apply {
-                                color = this@TextElement.color
-                                strokeWidth = 4f * scaleX
-                                style = Paint.Style.STROKE
-                            }
-                            val lineY = anchorY + lineIdx * lineHeight - rect.height() * 1.0f - 4f * scaleX
-                            canvas.drawLine(left, lineY, left + segWidth, lineY, linePaint)
-                        }
-                        currentX += segWidth
+                        val lineY = anchorY + lineIdx * lineHeight - rect.height() * 1.0f - 4f * scaleX
+                        canvas.drawLine(left, lineY, left + segWidth, lineY, linePaint)
                     }
+
+                    currentX = if (rtl) left else left + segWidth
                 }
             }
 
@@ -454,7 +421,6 @@ class CanvasView @JvmOverloads constructor(
         }
     }
 
-    // اکنون parseLine به internal تغییر یافته و اینجا به راحتی قابل استفاده است
     private fun getBoundingBox(el: CanvasElement): RectF? {
         return when (el) {
             is TextElement -> {
@@ -467,7 +433,7 @@ class CanvasView @JvmOverloads constructor(
                 var maxX = Float.MIN_VALUE; var maxY = Float.MIN_VALUE
 
                 for ((i, line) in el.lines.withIndex()) {
-                    val segments = el.parseLine(line)   // حالا در دسترس است
+                    val segments = el.parseLine(line)
                     var totalWidth = 0f
                     for (seg in segments) totalWidth += paint.measureText(seg.text)
                     val startX = el.getDrawStartX(totalWidth, anchorX)
@@ -475,9 +441,11 @@ class CanvasView @JvmOverloads constructor(
                     val top = anchorY + i * lineHeight - paint.textSize
                     val right = startX + totalWidth
                     val bottom = anchorY + i * lineHeight
+
                     minX = min(minX, left); maxX = max(maxX, right)
                     minY = min(minY, top); maxY = max(maxY, bottom)
                 }
+
                 val a = Math.toRadians(el.rotation.toDouble())
                 val corners = arrayOf(
                     floatArrayOf(minX, minY), floatArrayOf(maxX, minY),
