@@ -228,7 +228,7 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    // ---------- تاریخچه ----------
+    // ---------- تاریخچه (دقیقاً شبیه لایه‌ها) ----------
     private fun loadHistory() {
         if (historyFile.exists()) {
             historyTexts.clear()
@@ -245,6 +245,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showHistoryDialog() {
+        // همان ساختار لایه‌ها برای تضمین رنگ سیاه
         val container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(8, 8, 8, 8)
@@ -254,7 +255,6 @@ class MainActivity : AppCompatActivity() {
         if (historyTexts.isEmpty()) {
             container.addView(TextView(this).apply {
                 text = "تاریخچه خالی است"
-                setTextAppearance(android.R.style.TextAppearance_Material_Body1)
                 setTextColor(Color.BLACK)
             })
         } else {
@@ -271,12 +271,9 @@ class MainActivity : AppCompatActivity() {
                 val tv = TextView(this).apply {
                     text = text
                     layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-                    // دو خط جادویی برای رفع مشکل سفیدی متن
-                    setTextAppearance(android.R.style.TextAppearance_Material_Body1)
-                    setTextColor(Color.BLACK)
-                    // تنظیمات دیگر
                     textSize = 16f
                     maxLines = 2
+                    setTextColor(Color.BLACK)   // فقط رنگ مشکی
                     setBackgroundColor(Color.TRANSPARENT)
                 }
                 val copyBtn = ImageButton(this).apply {
@@ -296,7 +293,6 @@ class MainActivity : AppCompatActivity() {
                             container.removeAllViews()
                             container.addView(TextView(context).apply {
                                 text = "تاریخچه خالی است"
-                                setTextAppearance(android.R.style.TextAppearance_Material_Body1)
                                 setTextColor(Color.BLACK)
                             })
                         }
@@ -307,7 +303,6 @@ class MainActivity : AppCompatActivity() {
                 container.addView(row)
             }
         }
-
         val deleteAllBtn = Button(this).apply {
             text = "حذف همه 🗑️"
             setTextColor(Color.BLACK)
@@ -316,7 +311,6 @@ class MainActivity : AppCompatActivity() {
                 container.removeAllViews()
                 container.addView(TextView(context).apply {
                     text = "تاریخچه خالی است"
-                    setTextAppearance(android.R.style.TextAppearance_Material_Body1)
                     setTextColor(Color.BLACK)
                 })
                 toast("همه حذف شدند")
@@ -324,22 +318,11 @@ class MainActivity : AppCompatActivity() {
         }
         container.addView(deleteAllBtn)
 
-        val dialog = AlertDialog.Builder(this, android.R.style.Theme_Material_Light_Dialog_Alert)
+        AlertDialog.Builder(this, android.R.style.Theme_Material_Light_Dialog_Alert)
             .setTitle("تاریخچه متون")
             .setView(ScrollView(this).apply { addView(container) })
             .setPositiveButton("بستن 🔚", null)
-            .create()
-
-        dialog.show()
-
-        // ۱. رنگ دکمه مثبت
-        dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(Color.BLACK)
-
-        // ۲. رنگ عنوان دیالوگ (برای قطعیت در همهٔ نسخه‌ها)
-        try {
-            val titleId = resources.getIdentifier("alertTitle", "id", "android")
-            dialog.findViewById<TextView>(titleId)?.setTextColor(Color.BLACK)
-        } catch (_: Exception) { }
+            .show()
     }
 
     // ---------- افزودن متن (با اعداد دایره‌ای) ----------
